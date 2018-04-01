@@ -22,11 +22,9 @@ import (
 var (
 	logger = logxi.New("build.go")
 
-	prune     = flag.Bool("prune", true, "When enabled will prune any prerelease images replaced by this build")
 	verbose   = flag.Bool("v", false, "When enabled will print internal logging for this tool")
-	recursive = flag.Bool("r", false, "When enabled this tool will visit any sub directories that contain main functions and build in each")
-	userDirs  = flag.String("dirs", ".", "A comma seperated list of root directories that will be used a starting points looking for Go code, this will default to the current working directory")
-	imageOnly = flag.Bool("image-only", false, "Used to only perform a docker build of the component with no other steps")
+	recursive = flag.Bool("r", true, "When enabled this tool will visit any sub directories that contain main functions and build in each")
+	userDirs  = flag.String("dirs", "cmd", "A comma seperated list of root directories that will be used a starting points looking for Go code, this will default to the current working directory")
 )
 
 func usage() {
@@ -116,7 +114,7 @@ func runBuild(dir string, verFn string) (outputs []string, err errors.Error) {
 		return outputs, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 	}
 
-	outputs, err = build(dir, verFn, *imageOnly, *prune)
+	outputs, err = build(dir, verFn)
 
 	if errGo = os.Chdir(cwd); errGo != nil {
 		logger.Warn("The original directory could not be restored after the build completed")
@@ -130,7 +128,7 @@ func runBuild(dir string, verFn string) (outputs []string, err errors.Error) {
 
 // build performs the default build for the component within the directory specified
 //
-func build(dir string, verFn string, imageOnly bool, prune bool) (outputs []string, err errors.Error) {
+func build(dir string, verFn string) (outputs []string, err errors.Error) {
 
 	outputs = []string{}
 
@@ -140,5 +138,5 @@ func build(dir string, verFn string, imageOnly bool, prune bool) (outputs []stri
 		return outputs, err
 	}
 
-	return md.GoDockerBuild(imageOnly, prune)
+	return md.GoBuild()
 }

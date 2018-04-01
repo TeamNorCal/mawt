@@ -4,8 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/mgutz/logxi" // Using a forked copy of this package results in build issues
+
+	"github.com/karlmutch/mawt/version"
 
 	"github.com/karlmutch/envflag" // Forked copy of https://github.com/GoBike/envflag
 )
