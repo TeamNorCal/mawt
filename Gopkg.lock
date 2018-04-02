@@ -189,8 +189,7 @@
     ".",
     "version"
   ]
-  revision = "cba39bf285ea4a33d6fa3f313a09ee0da5319107"
-  version = "0.4.0"
+  branch = "feature/27_binary_naming_change"
 
 [[projects]]
   branch = "master"
