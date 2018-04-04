@@ -63,8 +63,8 @@
     "service/ecr",
     "service/sts"
   ]
-  revision = "5a33d0a4f5d9c27e6cd10b4c156e85b46c4501d7"
-  version = "v1.13.26"
+  revision = "f6efafab9ddced9880456bc53096fa79f4596f5e"
+  version = "v1.13.27"
 
 [[projects]]
   name = "github.com/docker/distribution"
