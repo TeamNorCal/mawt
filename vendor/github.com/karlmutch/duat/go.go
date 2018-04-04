@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -254,7 +253,7 @@ func (md *MetaData) GoBuild() (outputs []string, err errors.Error) {
 		return outputs, errors.New("unable to determine the compiler bin output dir, env var GOPATH might be missing or empty").With("stack", stack.Trace().TrimRuntime())
 	}
 
-	if err = md.GoCompile(map[string]string{}); err != nil {
+	if err = md.GoCompile(); err != nil {
 		return outputs, err
 	}
 
@@ -320,7 +319,7 @@ func (md *MetaData) GoFetchBuilt() (outputs []string, err errors.Error) {
 	return outputs, errGo.(errors.Error)
 }
 
-func (md *MetaData) GoCompile(env map[string]string) (err errors.Error) {
+func (md *MetaData) GoCompile() (err errors.Error) {
 	if errGo := os.Mkdir("bin", os.ModePerm); errGo != nil {
 		if !os.IsExist(errGo) {
 			return errors.Wrap(errGo, "unable to create the bin directory").With("stack", stack.Trace().TrimRuntime())
@@ -333,37 +332,9 @@ func (md *MetaData) GoCompile(env map[string]string) (err errors.Error) {
 	ldFlags = append(ldFlags, fmt.Sprintf("-X github.com/karlmutch/duat/version.GitHash=%s", md.Git.Hash))
 	ldFlags = append(ldFlags, fmt.Sprintf("-X github.com/karlmutch/duat/version.SemVer=\"%s\"", md.SemVer.String()))
 
-	buildOS, hasOS := os.LookupEnv("GOOS")
-	arch, hasArch := os.LookupEnv("GOARCH")
-
-	if !hasOS {
-		buildOS = runtime.GOOS
-	}
-	if !hasArch {
-		arch = runtime.GOARCH
-	}
-	if arch == "arm" {
-		if arm, isPresent := os.LookupEnv("GOARM"); isPresent {
-			arch += arm
-		}
-	}
-
-	buildEnv := []string{"GO_ENABLED=0"}
-	for k, v := range env {
-		buildEnv = append(buildEnv, fmt.Sprintf("%s='%s'", k, v))
-		switch k {
-		case "GOOS":
-			buildOS = v
-		case "GOARCH":
-			arch = v
-		}
-	}
-
-	output := fmt.Sprintf("%s-%s-%s", md.Module, buildOS, arch)
-
 	cmds := []string{
 		fmt.Sprintf("%s/bin/dep ensure", goPath),
-		fmt.Sprintf(("%s go build -ldflags \"" + strings.Join(ldFlags, " ") + "\" -o bin/" + output + " .\n"), strings.Join(buildEnv, " ")),
+		fmt.Sprintf(("GO_ENABLED=0 go build -ldflags \"" + strings.Join(ldFlags, " ") + "\" -o bin/" + md.Module + " .\n")),
 	}
 
 	cmd := exec.Command("bash", "-c", strings.Join(cmds, " && "))

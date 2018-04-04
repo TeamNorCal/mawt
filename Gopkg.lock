@@ -10,14 +10,14 @@
 [[projects]]
   name = "github.com/Masterminds/semver"
   packages = ["."]
-  revision = "59c29afe1a994eacb71c833025ca7acf874bb1da"
-  version = "v1.2.2"
+  revision = "8d82589cda2d7b5b9167396841975c4535c9bec6"
+  version = "v1.4.1"
 
 [[projects]]
   name = "github.com/Masterminds/sprig"
   packages = ["."]
-  revision = "b217b9c388de2cacde4354c536e520c52c055563"
-  version = "v2.14.1"
+  revision = "6b2a58267f6a8b1dc8e2eb5519b984008fa85e8c"
+  version = "v2.15.0"
 
 [[projects]]
   name = "github.com/Microsoft/go-winio"
@@ -26,15 +26,10 @@
   version = "v0.4.7"
 
 [[projects]]
-  name = "github.com/Sirupsen/logrus"
-  packages = ["."]
-  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
-  version = "v1.0.5"
-
-[[projects]]
   name = "github.com/aokoli/goutils"
   packages = ["."]
-  revision = "9c37978a95bd5c709a15883b6242714ea6709e64"
+  revision = "3391d3790d23d03408670993e957e8f408993c34"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -68,17 +63,17 @@
     "service/ecr",
     "service/sts"
   ]
-  revision = "74ca63959be8b9a9a24cd86eaaea8bf99de8022d"
-  version = "v1.13.25"
+  revision = "5a33d0a4f5d9c27e6cd10b4c156e85b46c4501d7"
+  version = "v1.13.26"
 
 [[projects]]
-  branch = "docker/1.13"
   name = "github.com/docker/distribution"
   packages = [
     "digest",
     "reference"
   ]
-  revision = "28602af35aceda2f8d571bad7ca37a54cf0250bc"
+  revision = "48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89"
+  version = "v2.6.2"
 
 [[projects]]
   name = "github.com/docker/docker"
@@ -104,19 +99,20 @@
   version = "v1.13.1"
 
 [[projects]]
-  branch = "docker/1.13"
   name = "github.com/docker/go-connections"
   packages = [
     "nat",
     "sockets",
     "tlsconfig"
   ]
-  revision = "ecb4cb2dd420ada7df7f2593d6c25441f65f69f2"
+  revision = "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
+  version = "v0.3.0"
 
 [[projects]]
   name = "github.com/docker/go-units"
   packages = ["."]
-  revision = "8a7beacffa3009a9ac66bad506b18ffdd110cf97"
+  revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
+  version = "v0.3.2"
 
 [[projects]]
   name = "github.com/emirpasic/gods"
@@ -134,8 +130,14 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "6333e38ac20b8949a8dd68baa3650f4dee8f39f0"
-  version = "v1.33.0"
+  revision = "5e9692864e22d02ac79e2fa499cffb00520b4fea"
+  version = "v1.34.0"
+
+[[projects]]
+  name = "github.com/go-stack/stack"
+  packages = ["."]
+  revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
+  version = "v1.7.0"
 
 [[projects]]
   name = "github.com/go-yaml/yaml"
@@ -144,15 +146,22 @@
   version = "v2.2.1"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
+  version = "0.2"
+
+[[projects]]
   name = "github.com/huandu/xstrings"
   packages = ["."]
-  revision = "3959339b333561bf62a38b424fd41517c2c90f40"
+  revision = "2bf18b218c51864a87384c06996e40ff9dcff8e1"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/imdario/mergo"
   packages = ["."]
-  revision = "3e95a51e0639b4cf372f2ccf74c86749d747fbdc"
-  version = "0.2.2"
+  revision = "33882c6bfe701aca0ff1472aa8b4ebd6135a560d"
+  version = "v0.3.3"
 
 [[projects]]
   branch = "master"
@@ -189,7 +198,8 @@
     ".",
     "version"
   ]
-  branch = "feature/27_binary_naming_change"
+  revision = "cba39bf285ea4a33d6fa3f313a09ee0da5319107"
+  version = "0.4.0"
 
 [[projects]]
   branch = "master"
@@ -224,19 +234,20 @@
 [[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
-  revision = "ed8eb9e318d7a84ce5915b495b7d35e0cfe7b5a8"
-  version = "v0.0.6"
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
 
 [[projects]]
   name = "github.com/mattn/go-isatty"
   packages = ["."]
-  revision = "3a115632dcd687f9c8cd01679c83a06a0e21c1f3"
-  version = "v0.0.1"
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
 
 [[projects]]
+  branch = "master"
   name = "github.com/mgutz/ansi"
   packages = ["."]
-  revision = "c286dcecd19ff979eeb73ea444e479b903f2cfcb"
+  revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
   branch = "mgutz/v2"
@@ -251,12 +262,6 @@
   revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
-  name = "github.com/opencontainers/runc"
-  packages = ["libcontainer/user"]
-  revision = "baf6536d6259209c3edfa2b22237af82942d3dfa"
-  version = "v0.1.1"
-
-[[projects]]
   name = "github.com/pelletier/go-buffruneio"
   packages = ["."]
   revision = "c37440a7cf42ac63b919c752ca73a85067e05992"
@@ -265,13 +270,8 @@
 [[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "839d9e913e063e28dfd0e6c7b7512793e0a48be9"
-
-[[projects]]
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  revision = "879c5887cd475cd7864858769793b2ceb0d44feb"
-  version = "v1.1.0"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/sergi/go-diff"
@@ -322,10 +322,9 @@
     "scrypt",
     "ssh",
     "ssh/agent",
-    "ssh/knownhosts",
-    "ssh/terminal"
+    "ssh/knownhosts"
   ]
-  revision = "12892e8c234f4fe6f6803f052061de9057903bb2"
+  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
 
 [[projects]]
   branch = "master"
@@ -368,8 +367,8 @@
     "osfs",
     "util"
   ]
-  revision = "027dceab1aa836eb310d92c2eb2266e4dc9f4b81"
-  version = "v4.1.0"
+  revision = "df053870ae7070b0350624ba5a22161ba3796cc0"
+  version = "v4.1.1"
 
 [[projects]]
   name = "gopkg.in/src-d/go-git.v4"
@@ -415,8 +414,8 @@
     "utils/merkletrie/internal/frame",
     "utils/merkletrie/noder"
   ]
-  revision = "1d28459504251497e0ce6132a0fadd5eb44ffd22"
-  version = "v4.2.0"
+  revision = "247cf690745dfd67ccd9f0c07878e6dd85e6c9ed"
+  version = "v4.2.1"
 
 [[projects]]
   name = "gopkg.in/warnings.v0"
@@ -427,6 +426,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d9c6fe4f56e9963b5147fd0ddbbc54442bfef1a0f35a84b0e941236329a8eb1a"
+  inputs-digest = "9ea6a2c6e58a17372792b2e537f6411a05f456c9aa395308c9f50cd6cd9fd692"
   solver-name = "gps-cdcl"
   solver-version = 1
