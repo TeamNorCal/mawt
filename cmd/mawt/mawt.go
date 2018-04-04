@@ -13,11 +13,12 @@ import (
 
 	"github.com/mgutz/logxi" // Using a forked copy of this package results in build issues
 
-	"github.com/karlmutch/mawt/version"
+	"github.com/TeamNorCal/mawt/version"
 
 	"github.com/go-stack/stack"
-	"github.com/karlmutch/envflag" // Forked copy of https://github.com/GoBike/envflag
 	"github.com/karlmutch/errors"
+
+	"github.com/karlmutch/envflag" // Forked copy of https://github.com/GoBike/envflag
 )
 
 var (

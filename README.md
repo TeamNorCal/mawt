@@ -8,11 +8,11 @@ This software implements a server that parses input from a Niantic Techthulu and
 
 ```shell
 cd ~
-mkdir -p mawt/src/github.com/karlmutch/
+mkdir -p mawt/src/github.com/TeamNorCal/
 export GOPATH=~/mawt
 export PATH=$GOPATH/bin:$PATH
-cd mawt/src/github.com/karlmutch/
-git clone https://github.com/karlmutch/mawt
+cd mawt/src/github.com/TeamNorCal/
+git clone https://github.com/TeamNorCal/mawt
 cd mawt
 ```
 
