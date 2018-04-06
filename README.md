@@ -1,6 +1,6 @@
 # mawt - A ray of light
 
-<repo-version>0.0.1</repo-version>
+<repo-version>0.1.0-feature-01-techthulu-events-1f3aTX</repo-version>
 
 This software implements a server that parses input from a Niantic Techthulu and uses it to build OPC frames that are then sent to another TCP/IP server.
 

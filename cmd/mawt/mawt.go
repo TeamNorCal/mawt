@@ -13,6 +13,7 @@ import (
 
 	"github.com/mgutz/logxi" // Using a forked copy of this package results in build issues
 
+	"github.com/TeamNorCal/mawt"
 	"github.com/TeamNorCal/mawt/version"
 
 	"github.com/go-stack/stack"
@@ -108,18 +109,10 @@ func initOPC(quitC <-chan struct{}) (err errors.Error) {
 	return nil
 }
 
-func initSound(quitC <-chan struct{}) (err errors.Error) {
+func initTechthulu(ambientC chan<- string, sfsxC chan<- []string, quitC <-chan struct{}) (err errors.Error) {
 
-	go func(quitC <-chan struct{}) {
-	}(quitC)
-
-	return nil
-}
-
-func initTechthulu(quitC <-chan struct{}) (err errors.Error) {
-
-	go func(quitC <-chan struct{}) {
-	}(quitC)
+	go func(ambientC chan<- string, sfsxC chan<- []string, quitC <-chan struct{}) {
+	}(ambientC, sfsxC, quitC)
 
 	return nil
 }
@@ -134,6 +127,9 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 	// blocking receive inside the run
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// error reporting comes back to the application for determinaing if anything needs doing
+	errorC := make(chan errors.Error, 1)
+
 	// Setup a channel to allow a CTRL-C to terminate all processing.  When the CTRL-C
 	// occurs we cancel the background msg pump processing pubsub mesages from
 	// google, and this will also cause the main thread to unblock and return
@@ -142,21 +138,32 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 	go func() {
 		defer cancel()
 
-		select {
-		case <-quitC:
-			return
-		case <-stopC:
-			logger.Warn("CTRL-C Seen")
-			close(quitC)
-			return
+		for {
+			select {
+			case err := <-errorC:
+				logger.Warn(err.Error())
+			case <-quitC:
+				return
+			case <-stopC:
+				logger.Warn("CTRL-C Seen")
+				close(quitC)
+				return
+			}
 		}
 	}()
 
 	signal.Notify(stopC, os.Interrupt, syscall.SIGTERM)
 
-	// Now start initializing the servers processing components
+	return startServer(ctx, errorC)
+}
 
-	if err := initSound(ctx.Done()); err != nil {
+// Now start initializing the servers processing components
+func startServer(ctx context.Context, errorC chan<- errors.Error) (errs []errors.Error) {
+
+	ambientC := make(chan string, 1)
+	sfsx := make(chan []string, 1)
+
+	if err := mawt.InitAudio(ambientC, sfsx, errorC, ctx.Done()); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -164,8 +171,13 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 		errs = append(errs, err)
 	}
 
-	if err := initTechthulu(ctx.Done()); err != nil {
+	if err := initTechthulu(ambientC, sfsx, ctx.Done()); err != nil {
 		errs = append(errs, err)
+	}
+
+	select {
+	case ambientC <- "e-ambient":
+	case <-time.After(100 * time.Millisecond):
 	}
 
 	return errs
