@@ -2,7 +2,7 @@
 
 <repo-version>0.0.1</repo-version>
 
-This software implements a server that parses input from a Niantic Techthulu and uses it to build OPC frames that are then sent to another TCP/IP server.
+This software implements a server that parses input from a Niantic Tecthulhu and uses it to build OPC frames that are then sent to another TCP/IP server.
 
 ## Source code preparation
 
