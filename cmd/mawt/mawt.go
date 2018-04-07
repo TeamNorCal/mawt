@@ -25,7 +25,8 @@ import (
 var (
 	logger = logxi.New("mawt")
 
-	verbose = flag.Bool("v", false, "When enabled will print internal logging for this tool")
+	verbose    = flag.Bool("v", false, "When enabled will print internal logging for this tool")
+	homePortal = flag.String("portal", "home", "The name of the portal for which this installation applies")
 )
 
 func usage() {
@@ -109,14 +110,6 @@ func initOPC(quitC <-chan struct{}) (err errors.Error) {
 	return nil
 }
 
-func initTechthulu(ambientC chan<- string, sfsxC chan<- []string, quitC <-chan struct{}) (err errors.Error) {
-
-	go func(ambientC chan<- string, sfsxC chan<- []string, quitC <-chan struct{}) {
-	}(ambientC, sfsxC, quitC)
-
-	return nil
-}
-
 func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) {
 
 	errs = []errors.Error{}
@@ -160,25 +153,13 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 // Now start initializing the servers processing components
 func startServer(ctx context.Context, errorC chan<- errors.Error) (errs []errors.Error) {
 
-	ambientC := make(chan string, 1)
-	sfsx := make(chan []string, 1)
-
-	if err := mawt.InitAudio(ambientC, sfsx, errorC, ctx.Done()); err != nil {
-		errs = append(errs, err)
-	}
-
 	if err := initOPC(ctx.Done()); err != nil {
 		errs = append(errs, err)
 	}
 
-	if err := initTechthulu(ambientC, sfsx, ctx.Done()); err != nil {
-		errs = append(errs, err)
-	}
+	gw := &mawt.Gateway{}
 
-	select {
-	case ambientC <- "e-ambient":
-	case <-time.After(100 * time.Millisecond):
-	}
+	_, _ = gw.Start(*homePortal, errorC, ctx.Done())
 
 	return errs
 }
