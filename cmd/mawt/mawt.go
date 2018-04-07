@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"strings"
 	"syscall"
 	"time"
 
@@ -26,7 +27,7 @@ var (
 	logger = logxi.New("mawt")
 
 	verbose    = flag.Bool("v", false, "When enabled will print internal logging for this tool")
-	homePortal = flag.String("portal", "home", "The name of the portal for which this installation applies")
+	tecthulhus = flag.String("tecthulhus", "http://127.0.0.1:12345/", "A comma seperated list of IP based tecthulhus, the first being the 'home' portal")
 )
 
 func usage() {
@@ -159,7 +160,13 @@ func startServer(ctx context.Context, errorC chan<- errors.Error) (errs []errors
 
 	gw := &mawt.Gateway{}
 
-	_, _ = gw.Start(*homePortal, errorC, ctx.Done())
+	statusC, _ := gw.Start(errorC, ctx.Done())
+
+	portals := strings.Split(*tecthulhus, ",")
+	for i, portal := range portals {
+		tec := mawt.NewTecthulu(portal, i == 0, statusC, errorC)
+		go tec.Run(ctx.Done())
+	}
 
 	return errs
 }

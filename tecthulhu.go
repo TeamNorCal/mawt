@@ -41,18 +41,20 @@ type tPortalStatus struct {
 }
 
 type PortalMon interface {
-	Run(quitC chan struct{})
+	Run(quitC <-chan struct{})
 }
 
 type tecthulhu struct {
 	url     string
-	statusC chan<- *portalStatus
+	home    bool
+	statusC chan<- *PortalMsg
 	errorC  chan<- errors.Error
 }
 
-func NewTechthulu(url string, statusC chan<- *portalStatus, errorC chan<- errors.Error) (tec *tecthulhu) {
+func NewTecthulu(url string, home bool, statusC chan<- *PortalMsg, errorC chan<- errors.Error) (tec *tecthulhu) {
 	return &tecthulhu{
 		url:     url,
+		home:    home,
 		statusC: statusC,
 		errorC:  errorC,
 	}
@@ -143,10 +145,11 @@ func (tec *tecthulhu) checkPortal() (status *portalStatus, err errors.Error) {
 	if errGo != nil {
 		return nil, errors.Wrap(errGo).With("url", tec.url).With("body", string(body)).With("stack", stack.Trace().TrimRuntime())
 	}
-	return tecStatus.status(), err
+	status = tecStatus.status()
+	return status, err
 }
 
-func (tec *tecthulhu) getStatus() {
+func (tec *tecthulhu) sendStatus() {
 	// Perform a regular status check with the portal
 	// and return the received results  to listeners using
 	// the channel
@@ -165,11 +168,16 @@ func (tec *tecthulhu) getStatus() {
 		return
 	}
 
+	msg := &PortalMsg{
+		Status: status.Status,
+		Home:   tec.home,
+	}
+
 	select {
-	case tec.statusC <- status:
+	case tec.statusC <- msg:
 	case <-time.After(750 * time.Millisecond):
 		go func() {
-			err := errors.New("portal status had to be skipped").With("url", tec.url).With("stack", stack.Trace().TrimRuntime())
+			err := errors.New("portal status dropped").With("url", tec.url).With("stack", stack.Trace().TrimRuntime())
 			select {
 			case tec.errorC <- err:
 			case <-time.After(2 * time.Second):
@@ -183,15 +191,16 @@ func (tec *tecthulhu) getStatus() {
 // regular reports on the status of the portal with which it
 // is associated
 //
-func (tec *tecthulhu) Run(quitC chan struct{}) {
+func (tec *tecthulhu) Run(quitC <-chan struct{}) {
 
-	poll := time.NewTicker(2 * time.Second)
+	poll := time.NewTicker(time.Second)
 	defer poll.Stop()
 
 	for {
 		select {
 		case <-poll.C:
-			tec.getStatus()
+			tec.sendStatus()
+
 		case <-quitC:
 			return
 		}

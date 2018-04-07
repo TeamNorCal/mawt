@@ -38,7 +38,6 @@ type portalStatus struct {
 }
 
 type PortalMsg struct {
-	Name   string `json:"name"`
 	Home   bool   `json:"home"`
 	Status Status `json:"externalApiPortal"`
 }

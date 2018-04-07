@@ -11,7 +11,7 @@ import (
 type Gateway struct {
 }
 
-func (*Gateway) Start(homePortal string, errorC chan<- errors.Error, quitC <-chan struct{}) (tectC chan *PortalMsg, subscribeC chan chan *PortalMsg) {
+func (*Gateway) Start(errorC chan<- errors.Error, quitC <-chan struct{}) (tectC chan *PortalMsg, subscribeC chan chan *PortalMsg) {
 
 	tectC, subscribeC = startFanOut(quitC)
 
