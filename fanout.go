@@ -1,6 +1,7 @@
 package mawt
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -27,33 +28,43 @@ func startFanOut(quitC <-chan struct{}) (inC chan *PortalMsg, subC chan chan *Po
 	subC = make(chan chan *PortalMsg, 1)
 
 	go func(quitC <-chan struct{}) {
-		select {
-		case <-quitC:
-			return
-		case sub := <-subC:
-			subs.Lock()
-			subs.subs = append(subs.subs, sub)
-			subs.Unlock()
-		case msg := <-inC:
-			// The subscriptions are notified of a message and are groomed out
-			// on unrecoverable failures using https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating
-			subs.Lock()
-			newSubs := subs.subs[:0]
-			for _, ch := range subs.subs {
-				func() {
-					defer func() {
-						if r := recover(); r == nil {
-							newSubs = append(newSubs, ch)
-						}
-					}()
-				}()
-				select {
-				case ch <- msg:
-				case <-time.After(250 * time.Millisecond):
+		defer fmt.Println("fanout stopped")
+		for {
+			select {
+			case <-quitC:
+				return
+			case sub := <-subC:
+				if nil != sub {
+					subs.Lock()
+					subs.subs = append(subs.subs, sub)
+					subs.Unlock()
+					fmt.Println("subscription added")
 				}
+			case msg := <-inC:
+				// The subscriptions are notified of a message and are groomed out
+				// on unrecoverable failures using https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating
+				subs.Lock()
+				fmt.Printf("tecthulhu status (%d)\n", len(subs.subs))
+				newSubs := subs.subs[:0]
+				for _, ch := range subs.subs {
+					func() {
+						defer func() {
+							if r := recover(); r == nil {
+								newSubs = append(newSubs, ch)
+								return
+							}
+							fmt.Println("subscription dropped failed to send")
+						}()
+					}()
+					select {
+					case ch <- msg:
+					case <-time.After(250 * time.Millisecond):
+						fmt.Println("subscription failed to send")
+					}
+				}
+				subs.subs = newSubs
+				subs.Unlock()
 			}
-			subs.subs = newSubs
-			subs.Unlock()
 		}
 	}(quitC)
 

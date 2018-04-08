@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"path"
@@ -164,7 +165,16 @@ func startServer(ctx context.Context, errorC chan<- errors.Error) (errs []errors
 
 	portals := strings.Split(*tecthulhus, ",")
 	for i, portal := range portals {
-		tec := mawt.NewTecthulu(portal, i == 0, statusC, errorC)
+		url, errGo := url.Parse(portal)
+		if errGo != nil {
+			errs = append(errs, errors.Wrap(errGo).With("url", portal).With("stack", stack.Trace().TrimRuntime()))
+			continue
+		}
+		if len(url.Path) <= 1 {
+			logger.Warn("URL supplied without a path component, default one supplied")
+			url.Path = "/module/status/json"
+		}
+		tec := mawt.NewTecthulu(*url, i == 0, statusC, errorC)
 		go tec.Run(ctx.Done())
 	}
 

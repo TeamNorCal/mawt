@@ -45,13 +45,13 @@ type PortalMon interface {
 }
 
 type tecthulhu struct {
-	url     string
+	url     url.URL
 	home    bool
 	statusC chan<- *PortalMsg
 	errorC  chan<- errors.Error
 }
 
-func NewTecthulu(url string, home bool, statusC chan<- *PortalMsg, errorC chan<- errors.Error) (tec *tecthulhu) {
+func NewTecthulu(url url.URL, home bool, statusC chan<- *PortalMsg, errorC chan<- errors.Error) (tec *tecthulhu) {
 	return &tecthulhu{
 		url:     url,
 		home:    home,
@@ -108,14 +108,10 @@ func (tec *tPortalStatus) status() (state *portalStatus) {
 func (tec *tecthulhu) checkPortal() (status *portalStatus, err errors.Error) {
 
 	body := []byte{}
-	url, errGo := url.Parse(tec.url)
-	if errGo != nil {
-		return nil, errors.Wrap(errGo).With("url", tec.url).With("stack", stack.Trace().TrimRuntime())
-	}
 
-	switch url.Scheme {
+	switch tec.url.Scheme {
 	case "http":
-		resp, errGo := http.Get(tec.url)
+		resp, errGo := http.Get(tec.url.String())
 		if errGo != nil {
 			return nil, errors.Wrap(errGo).With("url", tec.url).With("stack", stack.Trace().TrimRuntime())
 		}
@@ -127,11 +123,11 @@ func (tec *tecthulhu) checkPortal() (status *portalStatus, err errors.Error) {
 		}
 
 	case "serial":
-		errGo := fmt.Errorf("Unknown scheme %s for the tecthulhu device is not yet implemented", url.Scheme)
+		errGo := fmt.Errorf("Unknown scheme %s for the tecthulhu device is not yet implemented", tec.url.Scheme)
 		return nil, errors.Wrap(errGo).With("url", tec.url).With("stack", stack.Trace().TrimRuntime())
 
 	default:
-		errGo := fmt.Errorf("Unknown scheme %s for the tecthulhu device URI", url.Scheme)
+		errGo := fmt.Errorf("Unknown scheme %s for the tecthulhu device URI", tec.url.Scheme)
 		return nil, errors.Wrap(errGo).With("url", tec.url).With("stack", stack.Trace().TrimRuntime())
 	}
 
@@ -141,7 +137,7 @@ func (tec *tecthulhu) checkPortal() (status *portalStatus, err errors.Error) {
 	//
 	tecStatus := &tPortalStatus{}
 
-	errGo = json.Unmarshal(body, &tecStatus)
+	errGo := json.Unmarshal(body, &tecStatus)
 	if errGo != nil {
 		return nil, errors.Wrap(errGo).With("url", tec.url).With("body", string(body)).With("stack", stack.Trace().TrimRuntime())
 	}
@@ -162,7 +158,7 @@ func (tec *tecthulhu) sendStatus() {
 			select {
 			case tec.errorC <- err:
 			case <-time.After(500 * time.Millisecond):
-				fmt.Fprintf(os.Stderr, "could not send, error for ignored portal status update %s\n", err.Error())
+				fmt.Fprintf(os.Stderr, "could not send error for portal status update %s\n", err.Error())
 			}
 		}(err)
 		return
@@ -181,7 +177,7 @@ func (tec *tecthulhu) sendStatus() {
 			select {
 			case tec.errorC <- err:
 			case <-time.After(2 * time.Second):
-				fmt.Fprintln(os.Stderr, "could not send error for ignored portal status update")
+				fmt.Fprintf(os.Stderr, "could not send error for portal status update %s\n", err.Error())
 			}
 		}()
 	}

@@ -33,4 +33,11 @@ go run build.go
 
 ## Running mawt
 
+```shell
+LOGXI=*=DBG /home/pi/mawt/bin/mawt
+```
 
+```shell
+cd assets/simulator/XM_long_cycle
+LOGXI=*=DBG ../../../cmd/simulator/bin/simulator -listen :12345
+```

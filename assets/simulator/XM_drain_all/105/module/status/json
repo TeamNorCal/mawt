@@ -1,0 +1,9 @@
+{
+    "status": {
+        "title": "Camp Navarro",
+        "resonators": [ ],
+        "level": 4,
+        "health": 0,
+        "controllingFaction": "0"
+    }
+}

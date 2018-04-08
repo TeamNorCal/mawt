@@ -1,0 +1,108 @@
+{
+    "status": {
+        "title": "Camp Navarro",
+        "owner": "",
+        "level": 5,
+        "health": 90,
+        "controllingFaction": "2",
+        "mods": [],
+        "resonators": [
+            {
+                "position": "E",
+                "level": 8,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "NE",
+                "level": 7,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "N",
+                "level": 6,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "NW",
+                "level": 6,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "W",
+                "level": 5,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "SW",
+                "level": 5,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "S",
+                "level": 4,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "SE",
+                "level": 4,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "E",
+                "level": 8,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "NE",
+                "level": 7,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "N",
+                "level": 6,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "NW",
+                "level": 6,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "W",
+                "level": 5,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "SW",
+                "level": 5,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "S",
+                "level": 4,
+                "health": 90,
+                "owner": "Rick"
+            },
+            {
+                "position": "SE",
+                "level": 4,
+                "health": 90,
+                "owner": "Rick"
+            }
+        ]
+    }
+}
