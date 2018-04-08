@@ -160,13 +160,15 @@ func startServer(ctx context.Context, errorC chan<- errors.Error) (errs []errors
 
 	gw := &mawt.Gateway{}
 
-	statusC, _ := gw.Start(errorC, ctx.Done())
+	statusC, subscribeC := gw.Start(errorC, ctx.Done())
 
 	portals := strings.Split(*tecthulhus, ",")
 	for i, portal := range portals {
 		tec := mawt.NewTecthulu(portal, i == 0, statusC, errorC)
 		go tec.Run(ctx.Done())
 	}
+
+	go runMonitoring(subscribeC, ctx.Done())
 
 	return errs
 }
