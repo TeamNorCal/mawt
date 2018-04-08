@@ -1,0 +1,18 @@
+{
+    "status": {
+        "title": "Camp Navarro",
+        "owner": "",
+        "level": 8,
+        "health": 100,
+        "controllingFaction": "2",
+        "mods": [],
+        "resonators": [
+            {
+                "position": "E",
+                "level": 8,
+                "health": 100,
+                "owner": "Rick"
+            }
+        ]
+    }
+}

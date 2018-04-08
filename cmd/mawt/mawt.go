@@ -5,14 +5,17 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"path"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/mgutz/logxi" // Using a forked copy of this package results in build issues
 
+	"github.com/TeamNorCal/mawt"
 	"github.com/TeamNorCal/mawt/version"
 
 	"github.com/go-stack/stack"
@@ -24,7 +27,8 @@ import (
 var (
 	logger = logxi.New("mawt")
 
-	verbose = flag.Bool("v", false, "When enabled will print internal logging for this tool")
+	verbose    = flag.Bool("v", false, "When enabled will print internal logging for this tool")
+	tecthulhus = flag.String("tecthulhus", "http://127.0.0.1:12345/", "A comma seperated list of IP based tecthulhus, the first being the 'home' portal")
 )
 
 func usage() {
@@ -108,22 +112,6 @@ func initOPC(quitC <-chan struct{}) (err errors.Error) {
 	return nil
 }
 
-func initSound(quitC <-chan struct{}) (err errors.Error) {
-
-	go func(quitC <-chan struct{}) {
-	}(quitC)
-
-	return nil
-}
-
-func initTechthulu(quitC <-chan struct{}) (err errors.Error) {
-
-	go func(quitC <-chan struct{}) {
-	}(quitC)
-
-	return nil
-}
-
 func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) {
 
 	errs = []errors.Error{}
@@ -134,6 +122,9 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 	// blocking receive inside the run
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// error reporting comes back to the application for determinaing if anything needs doing
+	errorC := make(chan errors.Error, 1)
+
 	// Setup a channel to allow a CTRL-C to terminate all processing.  When the CTRL-C
 	// occurs we cancel the background msg pump processing pubsub mesages from
 	// google, and this will also cause the main thread to unblock and return
@@ -142,31 +133,52 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 	go func() {
 		defer cancel()
 
-		select {
-		case <-quitC:
-			return
-		case <-stopC:
-			logger.Warn("CTRL-C Seen")
-			close(quitC)
-			return
+		for {
+			select {
+			case err := <-errorC:
+				logger.Warn(err.Error())
+			case <-quitC:
+				return
+			case <-stopC:
+				logger.Warn("CTRL-C Seen")
+				close(quitC)
+				return
+			}
 		}
 	}()
 
 	signal.Notify(stopC, os.Interrupt, syscall.SIGTERM)
 
-	// Now start initializing the servers processing components
+	return startServer(ctx, errorC)
+}
 
-	if err := initSound(ctx.Done()); err != nil {
-		errs = append(errs, err)
-	}
+// Now start initializing the servers processing components
+func startServer(ctx context.Context, errorC chan<- errors.Error) (errs []errors.Error) {
 
 	if err := initOPC(ctx.Done()); err != nil {
 		errs = append(errs, err)
 	}
 
-	if err := initTechthulu(ctx.Done()); err != nil {
-		errs = append(errs, err)
+	gw := &mawt.Gateway{}
+
+	statusC, subscribeC := gw.Start(errorC, ctx.Done())
+
+	portals := strings.Split(*tecthulhus, ",")
+	for i, portal := range portals {
+		url, errGo := url.Parse(portal)
+		if errGo != nil {
+			errs = append(errs, errors.Wrap(errGo).With("url", portal).With("stack", stack.Trace().TrimRuntime()))
+			continue
+		}
+		if len(url.Path) <= 1 {
+			logger.Warn("URL supplied without a path component, default one supplied")
+			url.Path = "/module/status/json"
+		}
+		tec := mawt.NewTecthulu(*url, i == 0, statusC, errorC)
+		go tec.Run(ctx.Done())
 	}
+
+	go runMonitoring(subscribeC, ctx.Done())
 
 	return errs
 }

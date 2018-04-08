@@ -1,0 +1,108 @@
+{
+    "status": {
+        "title": "Camp Navarro",
+        "owner": "",
+        "level": 5,
+        "health": 70,
+        "controllingFaction": "1",
+        "mods": [],
+        "resonators": [
+            {
+                "position": "E",
+                "level": 8,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "NE",
+                "level": 7,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "N",
+                "level": 6,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "NW",
+                "level": 6,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "W",
+                "level": 5,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "SW",
+                "level": 5,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "S",
+                "level": 4,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "SE",
+                "level": 4,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "E",
+                "level": 8,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "NE",
+                "level": 7,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "N",
+                "level": 6,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "NW",
+                "level": 6,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "W",
+                "level": 5,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "SW",
+                "level": 5,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "S",
+                "level": 4,
+                "health": 70,
+                "owner": "Morty"
+            },
+            {
+                "position": "SE",
+                "level": 4,
+                "health": 70,
+                "owner": "Morty"
+            }
+        ]
+    }
+}

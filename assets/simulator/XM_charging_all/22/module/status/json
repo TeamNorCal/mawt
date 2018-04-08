@@ -1,0 +1,60 @@
+{
+    "status": {
+        "title": "Camp Navarro",
+        "owner": "",
+        "level": 1,
+        "health": 90,
+        "controllingFaction": "1",
+        "mods": [],
+        "resonators": [
+            {
+                "position": "E",
+                "level": 1,
+                "health": 90,
+                "owner": "Morty"
+            },
+            {
+                "position": "NE",
+                "level": 1,
+                "health": 90,
+                "owner": "Morty"
+            },
+            {
+                "position": "N",
+                "level": 1,
+                "health": 90,
+                "owner": "Morty"
+            },
+            {
+                "position": "NW",
+                "level": 1,
+                "health": 90,
+                "owner": "Morty"
+            },
+            {
+                "position": "W",
+                "level": 1,
+                "health": 90,
+                "owner": "Morty"
+            },
+            {
+                "position": "SW",
+                "level": 1,
+                "health": 90,
+                "owner": "Morty"
+            },
+            {
+                "position": "S",
+                "level": 1,
+                "health": 90,
+                "owner": "Morty"
+            },
+            {
+                "position": "SE",
+                "level": 1,
+                "health": 90,
+                "owner": "Morty"
+            }
+        ]
+    }
+}

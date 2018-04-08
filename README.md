@@ -1,6 +1,6 @@
 # mawt - A ray of light
 
-<repo-version>0.0.1</repo-version>
+<repo-version>0.1.0-feature-01-techthulu-events-1f3aTX</repo-version>
 
 This software implements a server that parses input from a Niantic Tecthulhu and uses it to build OPC frames that are then sent to another TCP/IP server.
 
@@ -33,4 +33,11 @@ go run build.go
 
 ## Running mawt
 
+```shell
+LOGXI=*=DBG /home/pi/mawt/bin/mawt
+```
 
+```shell
+cd assets/simulator/XM_long_cycle
+LOGXI=*=DBG ../../../cmd/simulator/bin/simulator -listen :12345
+```

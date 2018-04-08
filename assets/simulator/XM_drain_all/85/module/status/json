@@ -1,0 +1,49 @@
+{
+    "status": {
+        "title": "Camp Navarro",
+        "resonators": [{
+            "position": "E",
+            "level": 5,
+            "health": 15,
+            "owner": "goliadtx"
+        }, {
+            "position": "NE",
+            "level": 8,
+            "health": 15,
+            "owner": "goliadtx"
+        }, {
+            "position": "N",
+            "level": 2,
+            "health": 15,
+            "owner": "Matti91Tilde"
+        }, {
+            "position": "NW",
+            "level": 8,
+            "health": 15,
+            "owner": "Matti91Tilde"
+        }, {
+            "position": "W",
+            "level": 2,
+            "health": 15,
+            "owner": "ace"
+        }, {
+            "position": "SW",
+            "level": 5,
+            "health": 15,
+            "owner": "Wrenegade"
+        }, {
+            "position": "S",
+            "level": 3,
+            "health": 15,
+            "owner": "Matti91Tilde"
+        }, {
+            "position": "SE",
+            "level": 3,
+            "health": 15,
+            "owner": "Matti91Tilde"
+        }],
+        "level": 4,
+        "health": 15,
+        "controllingFaction": "1"
+    }
+}

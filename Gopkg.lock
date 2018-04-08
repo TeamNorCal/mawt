@@ -67,6 +67,12 @@
   version = "v1.13.27"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/cvanderschuere/alsa-go"
+  packages = ["."]
+  revision = "ea17a201cc126af674ce63eed4c12be88699e1a0"
+
+[[projects]]
   name = "github.com/docker/distribution"
   packages = [
     "digest",
@@ -168,6 +174,12 @@
   name = "github.com/jbenet/go-context"
   packages = ["io"]
   revision = "d14ea06fba99483203c19d92cfcd13ebe73135f4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/jcelliott/lumber"
+  packages = ["."]
+  revision = "dd349441af25132d146d7095c6693a15431fc9b1"
 
 [[projects]]
   name = "github.com/jjeffery/kv"
@@ -426,6 +438,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9ea6a2c6e58a17372792b2e537f6411a05f456c9aa395308c9f50cd6cd9fd692"
+  inputs-digest = "26ce2de42d00f10d8688d1d2937775266f4752c803cdc1b27efa9b0adc03779c"
   solver-name = "gps-cdcl"
   solver-version = 1
