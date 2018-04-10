@@ -49,17 +49,17 @@ func (sfx *SFXState) process(msg *PortalMsg) (err errors.Error) {
 	// and played back later
 	sfxs := []string{}
 
-	factionChange := lastState.ControllingFaction != state.ControllingFaction
+	factionChange := lastState.Faction != state.Faction
 
 	if factionChange {
 
 		// e-loss, r-loss, n-loss
-		faction := strings.ToLower(lastState.ControllingFaction)
+		faction := strings.ToLower(lastState.Faction)
 		effect := faction + "-loss"
 		sfxs = append(sfxs, effect)
 
 		// e-capture, r-capture, n-capture
-		faction = strings.ToLower(state.ControllingFaction)
+		faction = strings.ToLower(state.Faction)
 		effect = faction + "-capture"
 		sfxs = append(sfxs, effect)
 	} else {
@@ -69,7 +69,7 @@ func (sfx *SFXState) process(msg *PortalMsg) (err errors.Error) {
 
 	if factionChange || forceAmbient {
 		ambient := ""
-		faction := strings.ToLower(state.ControllingFaction)
+		faction := strings.ToLower(state.Faction)
 		ambient = faction + "-ambient"
 		forceAmbient = false
 		go func() {

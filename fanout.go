@@ -44,7 +44,6 @@ func startFanOut(quitC <-chan struct{}) (inC chan *PortalMsg, subC chan chan *Po
 				// The subscriptions are notified of a message and are groomed out
 				// on unrecoverable failures using https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating
 				subs.Lock()
-				fmt.Printf("tecthulhu status (%d)\n", len(subs.subs))
 				newSubs := subs.subs[:0]
 				for _, ch := range subs.subs {
 					func() {
@@ -55,12 +54,12 @@ func startFanOut(quitC <-chan struct{}) (inC chan *PortalMsg, subC chan chan *Po
 							}
 							fmt.Println("subscription dropped failed to send")
 						}()
+						select {
+						case ch <- msg:
+						case <-time.After(250 * time.Millisecond):
+							fmt.Println("subscription failed to send")
+						}
 					}()
-					select {
-					case ch <- msg:
-					case <-time.After(250 * time.Millisecond):
-						fmt.Println("subscription failed to send")
-					}
 				}
 				subs.subs = newSubs
 				subs.Unlock()

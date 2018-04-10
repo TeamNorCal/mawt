@@ -21,5 +21,7 @@ func (*Gateway) Start(errorC chan<- errors.Error, quitC <-chan struct{}) (tectC 
 	//
 	go StartSFX(subscribeC, errorC, quitC)
 
+	StartFadeCandy("127.0.0.1:7890", subscribeC, errorC, quitC)
+
 	return tectC, subscribeC
 }
