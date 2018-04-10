@@ -22,15 +22,15 @@ type Mod struct {
 }
 
 type Status struct {
-	Title              string      `json:"Title"`
-	Description        string      `json:"description"`
-	CoverImageURL      string      `json:"coverImageUrl"`
-	Owner              string      `json:"owner"`
-	Level              float32     `json:"level"`
-	Health             float32     `json:"health"`
-	ControllingFaction string      `json:"controllingFaction"` // Will be 'E'nlightened, 'R'esistance, or 'N'eutral
-	Mods               []Mod       `json:"mods"`
-	Resonators         []Resonator `json:"resonators"`
+	Title         string      `json:"Title"`
+	Description   string      `json:"description"`
+	CoverImageURL string      `json:"coverImageUrl"`
+	Owner         string      `json:"owner"`
+	Level         float32     `json:"level"`
+	Health        float32     `json:"health"`
+	Faction       string      `json:"controllingFaction"` // Will be 'E'nlightened, 'R'esistance, or 'N'eutral
+	Mods          []Mod       `json:"mods"`
+	Resonators    []Resonator `json:"resonators"`
 }
 
 type portalStatus struct {

@@ -68,6 +68,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/cnf/structhash"
+  packages = ["."]
+  revision = "62a607eb02243845670f25a61cbc2d394c1ede10"
+
+[[projects]]
+  branch = "master"
   name = "github.com/cvanderschuere/alsa-go"
   packages = ["."]
   revision = "ea17a201cc126af674ce63eed4c12be88699e1a0"
@@ -238,10 +244,22 @@
   version = "v1.7.0"
 
 [[projects]]
+  name = "github.com/kellydunn/go-opc"
+  packages = ["."]
+  revision = "807c76889fe050f39bdd402abcd82a1d2d20f653"
+  version = "v0.1.0"
+
+[[projects]]
   name = "github.com/kevinburke/ssh_config"
   packages = ["."]
   revision = "9fc7bb800b555d63157c65a904c86a2cc7b4e795"
   version = "0.4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lucasb-eyer/go-colorful"
+  packages = ["."]
+  revision = "231272389856c976b7500c4fffcc52ddf06ff4eb"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -438,6 +456,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "26ce2de42d00f10d8688d1d2937775266f4752c803cdc1b27efa9b0adc03779c"
+  inputs-digest = "bfd6a8ed68b1e61333e0ea442d328f0f4511ebd7c698e1685ab417423be59bb7"
   solver-name = "gps-cdcl"
   solver-version = 1

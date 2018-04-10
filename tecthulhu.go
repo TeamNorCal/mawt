@@ -27,13 +27,13 @@ type tResonator struct {
 }
 
 type tStatus struct {
-	Title              string       `json:"title"`
-	Owner              string       `json:"owner"`
-	Level              int          `json:"level"`
-	Health             int          `json:"health"`
-	ControllingFaction string       `json:"controllingFaction"`
-	Mods               []string     `json:"mods"`
-	Resonators         []tResonator `json:"resonators"`
+	Title      string       `json:"title"`
+	Owner      string       `json:"owner"`
+	Level      int          `json:"level"`
+	Health     int          `json:"health"`
+	Faction    string       `json:"controllingFaction"`
+	Mods       []string     `json:"mods"`
+	Resonators []tResonator `json:"resonators"`
 }
 
 type tPortalStatus struct {
@@ -63,13 +63,13 @@ func NewTecthulu(url url.URL, home bool, statusC chan<- *PortalMsg, errorC chan<
 func (tec *tPortalStatus) status() (state *portalStatus) {
 	state = &portalStatus{
 		Status: Status{
-			Title:              tec.State.Title,
-			Owner:              tec.State.Owner,
-			Level:              float32(tec.State.Level),
-			Health:             float32(tec.State.Health),
-			ControllingFaction: tec.State.ControllingFaction,
-			Mods:               []Mod{},
-			Resonators:         []Resonator{},
+			Title:      tec.State.Title,
+			Owner:      tec.State.Owner,
+			Level:      float32(tec.State.Level),
+			Health:     float32(tec.State.Health),
+			Faction:    tec.State.Faction,
+			Mods:       []Mod{},
+			Resonators: []Resonator{},
 		},
 	}
 	for _, res := range tec.State.Resonators {
@@ -81,13 +81,13 @@ func (tec *tPortalStatus) status() (state *portalStatus) {
 				Owner:    res.Owner,
 			})
 	}
-	switch tec.State.ControllingFaction {
+	switch tec.State.Faction {
 	case "1":
-		state.Status.ControllingFaction = "E" // Wnlightened
+		state.Status.Faction = "E" // Wnlightened
 	case "2":
-		state.Status.ControllingFaction = "R" // Resistance
+		state.Status.Faction = "R" // Resistance
 	default:
-		state.Status.ControllingFaction = "N" // Neutral
+		state.Status.Faction = "N" // Neutral
 
 	}
 	for i, modStr := range tec.State.Mods {
