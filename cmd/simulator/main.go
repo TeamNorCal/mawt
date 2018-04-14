@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	listen       = flag.String("listen", ":8080", "Address to bind to")
+	listen       = flag.String("listen", ":12345", "Address to bind to")
 	scenarioPath = flag.String("path", "./", "Path served as document root.")
 	remote       = flag.Bool("remote", false, "Enable remote management of the scenario being run")
 	scale        = flag.Int("scale", 1, "factor by which to accelerate the relative rate of the clock")

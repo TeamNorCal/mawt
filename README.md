@@ -37,7 +37,8 @@ go run build.go
 LOGXI=*=DBG /home/pi/mawt/bin/mawt
 ```
 
+## Running the simulator using scenario files
+
 ```shell
-cd assets/simulator/XM_long_cycle
-LOGXI=*=DBG ../../../cmd/simulator/bin/simulator -listen :12345
+LOGXI=*=DBG go run cmd/simulator/*.go -path assets/simulator/portal_builds
 ```

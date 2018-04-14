@@ -8,6 +8,8 @@ package mawt
 import (
 	"bytes"
 	"fmt"
+	"image/color"
+	"math"
 	"os"
 	"sync"
 	"time"
@@ -32,8 +34,12 @@ type Color struct {
 }
 
 var (
-	enlHealth = [101]Color{}
-	resHealth = [101]Color{}
+	enlHealth = [101]colorful.Color{}
+	resHealth = [101]colorful.Color{}
+
+	// Go epsilon can be determined for a specific platform based on
+	// advice in, https://github.com/golang/go/issues/966
+	epsilon = math.Nextafter(1, 2) - 1
 )
 
 func init() {
@@ -41,14 +47,14 @@ func init() {
 	c1, _ := colorful.Hex("#0A3306")
 	c2, _ := colorful.Hex("#36FF1F")
 	for i := 0; i != len(enlHealth); i++ {
-		enlHealth[i].R, enlHealth[i].G, enlHealth[i].B = c1.BlendLab(c2, float64(i)/float64(len(enlHealth))).RGB255()
+		enlHealth[i] = c1.BlendLab(c2, float64(i)/float64(len(enlHealth)))
 	}
 
 	// Gradient values for health from 0 -> Resistance blue full strength
 	c1, _ = colorful.Hex("#00066B")
 	c2, _ = colorful.Hex("#000FFF")
 	for i := 0; i != len(resHealth); i++ {
-		resHealth[i].R, resHealth[i].G, resHealth[i].B = c1.BlendLab(c2, float64(i)/float64(len(enlHealth))).RGB255()
+		resHealth[i] = c1.BlendLab(c2, float64(i)/float64(len(enlHealth)))
 	}
 }
 
@@ -84,9 +90,15 @@ func StartFadeCandy(server string, subscribeC chan chan *PortalMsg, errorC chan<
 	go runFadeCandyOPC(status, server, time.Duration(200*time.Millisecond), errorC, quitC)
 }
 
-func test8LED(oc *opc.Client, status *Status) (err errors.Error) {
+// test8LED is used to send an 8 LED test pattern based on the simple resonator
+// patterns seen on the portal
+//
+// brightness can be used to scale the brightness, 0 = off, 0.01 1% brightness
+// 1.0 and above 100%
+//
+func test8LED(oc *opc.Client, brightness float64, status *Status) (err errors.Error) {
 
-	color := Color{0, 0, 0}
+	clr := colorful.Color{}
 
 	m := opc.NewMessage(0)
 	m.SetLength(uint16(8 * 3))
@@ -104,20 +116,30 @@ func test8LED(oc *opc.Client, status *Status) (err errors.Error) {
 		switch status.Faction {
 		case "E":
 			if 0 != levels[i] {
-				color = Color{enlHealth[levels[i]].R, enlHealth[levels[i]].G, enlHealth[levels[i]].B}
+				clr = enlHealth[levels[i]]
 			} else {
-				color = Color{0x00, 0x00, 0x00}
+				clr = colorful.MakeColor(color.Black)
 			}
 		case "R":
 			if 0 != levels[i] {
-				color = Color{resHealth[levels[i]].R, resHealth[levels[i]].G, resHealth[levels[i]].B}
+				clr = resHealth[levels[i]]
 			} else {
-				color = Color{0x00, 0x00, 0x00}
+				clr = colorful.MakeColor(color.Black)
 			}
 		default:
-			color = Color{0x22, 0x22, 0x22}
+			clr = colorful.Hsv(0, 0, 5)
 		}
-		m.SetPixelColor(i, color.R, color.G, color.B)
+
+		if brightness < 1.0-epsilon {
+			if diff := math.Abs(brightness - 1); diff <= epsilon {
+				h, c, l := clr.Hcl()
+				l = (l * brightness) / 100.0
+				clr = colorful.Hcl(h, c, l)
+			}
+		}
+		r, g, b := clr.RGB255()
+
+		m.SetPixelColor(i, r, g, b)
 	}
 
 	if errGo := oc.Send(m); errGo != nil {
@@ -152,7 +174,7 @@ func runFadeCandyOPC(status *LastStatus, server string, refresh time.Duration, e
 			hash := structhash.Md5(copied, 1)
 			if bytes.Compare(last, hash) != 0 {
 				last = hash
-				if err := test8LED(oc, copied); err != nil {
+				if err := test8LED(oc, 0.15, copied); err != nil {
 					select {
 					case errorC <- err.With("url", server):
 					case <-time.After(100 * time.Millisecond):
