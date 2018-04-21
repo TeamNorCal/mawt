@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/errors"
+	colorful "github.com/lucasb-eyer/go-colorful"
 
 	"github.com/cnf/structhash"
 
@@ -82,6 +83,9 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 		}
 	}
 
+	// Start the LED command message pusher
+	go fc.RunLoop(errorC, quitC)
+
 	for {
 		select {
 		case <-time.After(refresh):
@@ -114,31 +118,82 @@ func (fc *FadeCandy) Send(m *opc.Message) (err errors.Error) {
 	return nil
 }
 
-//var sr SequenceRunner
-//var mapping Mapping
-func RunLoop() (err errors.Error) {
+func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) (err errors.Error) {
+
+	defer close(errorC)
+
 	sr, err := GetSeqRunner()
 	if err != nil {
 		return err
 	}
+
 	devices, universes, err := GetUniverses()
 	if err != nil {
 		return err
 	}
 
-	// Populate the logical buffers
-	//sr.ProcessFrame(time)
-	// Copy the logical buffers into the physical buffers
+	for {
+		select {
+		case <-time.After(30 * time.Millisecond):
+			// Populate the logical buffers
+			sr.ProcessFrame(time.Now())
 
-	for id := range universes {
-		devices.UpdateUniverse(id, sr.UniverseData(id))
-	}
+			// Copy the logical buffers into the physical buffers
 
-	/// Iterate across physical strands sending updates to the FadeCandies, possibly diffing to previous frame to see if necessary
-	for boardID := range boards {
-		for _, strandID := range boards[boardID] {
-			strandData := devices.GetStrandData(boardID, strandID)
-			// Send strandData to board here
+			for _, id := range universes {
+				devices.UpdateUniverse(id, sr.UniverseData(id))
+			}
+
+			// Iterate across physical strands sending updates to the
+			// FadeCandies, possibly diffing to previous frame to see if necessary
+			deviceStrands, errGo := GetStrands()
+			if errGo != nil {
+				sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+				continue
+			}
+			for device, strands := range deviceStrands {
+				for strand, strandLen := range strands {
+					if strandLen == 0 {
+						continue
+					}
+					// The following gives us an array of RGBA as a linear arrangement of LEDs
+					// for the indicated strand
+					strandData, errGo := devices.GetStrandData(uint(device), uint(strand))
+					if errGo != nil {
+						sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+						continue
+					}
+
+					// Prepare a message for this strand that has 3 bytes per LED
+					m := opc.NewMessage(0)
+					m.SetLength(uint16(len(strandData) * 3))
+					for i, rgba := range strandData {
+						clr := colorful.MakeColor(rgba)
+						if errGo != nil {
+							sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+							continue
+						}
+						r, g, b := clr.RGB255()
+						m.SetPixelColor(i, r, g, b)
+					}
+					if err := fc.Send(m); err != nil {
+						sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+					}
+				}
+			}
+		case <-quitC:
+			return
 		}
+	}
+}
+
+func sendErr(errorC chan<- errors.Error, err errors.Error) {
+	if errorC == nil {
+		return
+	}
+	select {
+	case errorC <- err:
+	case <-time.After(20 * time.Millisecond):
+		fmt.Println(fmt.Sprintf("%+v", err.Error()))
 	}
 }

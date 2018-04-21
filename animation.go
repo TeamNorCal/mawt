@@ -20,7 +20,8 @@ import (
 
 var (
 	// cfgStrands represents boards using the first dimension, the integer values represent
-	// individual strands with the length of each being the value
+	// individual strands with the length of each being the value.  This can contain 0 length
+	// strands
 	cfgStrands = [][]int{}
 
 	deviceMap = animation.Mapping{}
@@ -140,6 +141,18 @@ func init() {
 
 func GetSeqRunner() (sr *animation.SequenceRunner, err errors.Error) {
 	return animation.NewSequenceRunner(universeSizes), nil
+}
+
+func GetUniverses() (devices animation.Mapping, uniIds []uint, err errors.Error) {
+	uniIds = make([]uint, len(universes))
+	for i := uint(0); i < uint(len(uniIds)); i++ {
+		uniIds[i] = i
+	}
+	return deviceMap, uniIds, nil
+}
+
+func GetStrands() (deviceStrands [][]int, err errors.Error) {
+	return cfgStrands, nil
 }
 
 // test8LED is used to send an 8 LED test pattern based on the simple resonator
