@@ -116,18 +116,28 @@ func (fc *FadeCandy) Send(m *opc.Message) (err errors.Error) {
 
 //var sr SequenceRunner
 //var mapping Mapping
-func RunLoop() {
+func RunLoop() (err errors.Error) {
+	sr, err := GetSeqRunner()
+	if err != nil {
+		return err
+	}
+	devices, universes, err := GetUniverses()
+	if err != nil {
+		return err
+	}
+
 	// Populate the logical buffers
 	//sr.ProcessFrame(time)
 	// Copy the logical buffers into the physical buffers
-	for uniID := range universes {
-		logicalBuf := sr.UniverseData(uniID)
-		mapping.UpdateUniverse(uniID, logicalBuf)
+
+	for id := range universes {
+		devices.UpdateUniverse(id, sr.UniverseData(id))
 	}
+
 	/// Iterate across physical strands sending updates to the FadeCandies, possibly diffing to previous frame to see if necessary
 	for boardID := range boards {
 		for _, strandID := range boards[boardID] {
-			strandData := mapping.GetStrandData(boardID, strandID)
+			strandData := devices.GetStrandData(boardID, strandID)
 			// Send strandData to board here
 		}
 	}

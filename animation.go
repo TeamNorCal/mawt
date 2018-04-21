@@ -21,19 +21,92 @@ import (
 var (
 	// cfgStrands represents boards using the first dimension, the integer values represent
 	// individual strands with the length of each being the value
-	cfgStrands = [][]int{
-		[]int{8},
+	cfgStrands = [][]int{}
+
+	deviceMap = animation.Mapping{}
+
+	// In order to track the information needed to drive the animation library
+	// add data structures are able to track what was pushed into it during
+	// the setup phase that can be used when invoking library calls later
+	// without hard coded values and loops sitting around.
+	universes = map[string][]animation.PhysicalRange{
+		"test": []animation.PhysicalRange{
+			animation.PhysicalRange{
+				Board:      0,
+				Strand:     0,
+				StartPixel: 0,
+				Size:       8,
+			},
+		},
 	}
 
-	deviceMap = animation.NewMapping(cfgStrands)
+	// The animation relies on a sequence runner that contains an
+	// array of universes and a set of pixels for each universe
+	// that is operated on as a single ribbon of consecutive
+	// LEDs.  The universe ribbon lengths can be calculated during
+	// the setup phase and are kept as a global variable for use
+	// by clients of the animation library when ever they need
+	// a sequence runner
+	universeSizes = []uint{}
 )
 
 func init() {
-	deviceMap.AddUniverse("test", []animation.PhysicalRange{
-		animation.PhysicalRange{Board: 0, Strand: 0, StartPixel: 0, Size: 8},
-	})
+	// Calculate the maximum extent of every strand on all boards from
+	// the logical viewpoint master configuration
+	//
+	// This go map is board major, and strand minor with maximum extents
+	// as the inner most value
+	//
+	boards := map[uint]map[uint]int{}
+	for _, uni := range universes {
+		for _, physRange := range uni {
+			if _, isPresent := boards[physRange.Board]; !isPresent {
+				boards[physRange.Board] = map[uint]int{}
+			}
+			if extent, isPresent := boards[physRange.Board][physRange.Strand]; !isPresent {
+				boards[physRange.Board][physRange.Strand] = int(physRange.StartPixel + physRange.Size)
+			} else {
+				if extent < int(physRange.StartPixel+physRange.Size) {
+					boards[physRange.Board][physRange.Strand] = int(physRange.Size)
+				}
+			}
+		}
+	}
 
-	return
+	// Now for every board get the length of its strand map and use that to initial the arrays needed
+	// for physical boards, and stand lengths
+	cfgStrands = make([][]int, len(boards))
+	for i, board := range boards {
+		// Add the strand array using the length of the individual board maps
+		cfgStrands[i] = make([]int, len(board))
+		// Now within the board map visit each known strand and places its length into
+		// the indexed slice for the physical view
+		for strand, strandLen := range board {
+			cfgStrands[i][strand] = strandLen
+		}
+	}
+
+	// Everything was placed into a map to prevent complex slice extensions so now go through
+	// and get an appropriately sized array for all boards and their stands
+
+	// Now that we have the mountain of complexity behind us we can create a physical viewpoint
+	// across devices which is a summary of the universe viewed from a physical perspective
+	deviceMap = animation.NewMapping(cfgStrands)
+
+	// Now add the universes from our logical representation into an array of lengths
+	//
+	// The animation library uses an implied assumption that universes are added
+	// with IDs that related to positions in a slice as each universe is added,
+	// this assumption is exploited here so be careful in the future with any changes
+	universeSizes = make([]uint, 0, len(universes))
+	for k, v := range universes {
+		deviceMap.AddUniverse(k, v)
+		size := uint(0)
+		for _, aRange := range v {
+			size += uint(aRange.Size)
+		}
+		universeSizes = append(universeSizes, size)
+	}
 }
 
 type Color struct {
@@ -63,6 +136,10 @@ func init() {
 	for i := 0; i != len(resHealth); i++ {
 		resHealth[i] = c1.BlendLab(c2, float64(i)/float64(len(enlHealth)))
 	}
+}
+
+func GetSeqRunner() (sr *animation.SequenceRunner, err errors.Error) {
+	return animation.NewSequenceRunner(universeSizes), nil
 }
 
 // test8LED is used to send an 8 LED test pattern based on the simple resonator
