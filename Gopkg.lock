@@ -26,10 +26,10 @@
   version = "v0.4.7"
 
 [[projects]]
-  branch = "master"
+  branch = "slices_side_effects"
   name = "github.com/TeamNorCal/animation"
   packages = ["."]
-  revision = "a12f62091cc6a059efdc8c5d0463bd7667f1c3b3"
+  revision = "5e6d53c4597c6eb2745fe9ae9f8a332cb6bb96bf"
 
 [[projects]]
   name = "github.com/aokoli/goutils"

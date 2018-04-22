@@ -14,7 +14,7 @@ import (
 
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/errors"
-	colorful "github.com/lucasb-eyer/go-colorful"
+	// colorful "github.com/lucasb-eyer/go-colorful"
 
 	"github.com/cnf/structhash"
 
@@ -168,13 +168,13 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 					m := opc.NewMessage(0)
 					m.SetLength(uint16(len(strandData) * 3))
 					for i, rgba := range strandData {
-						clr := colorful.MakeColor(rgba)
-						if errGo != nil {
-							sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
-							continue
+						r, g, b, a := rgba.RGBA()
+						if a == 0 {
+							r = 0
+							g = 0
+							b = 0
 						}
-						r, g, b := clr.RGB255()
-						m.SetPixelColor(i, r, g, b)
+						m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
 					}
 					if err := fc.Send(m); err != nil {
 						sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
