@@ -59,9 +59,7 @@ func StartFadeCandy(server string, subscribeC chan chan *PortalMsg, errorC chan<
 		}
 	}()
 
-	fc = &FadeCandy{
-		oc: opc.NewClient(),
-	}
+	fc = &FadeCandy{}
 
 	go fc.run(status, server, time.Duration(200*time.Millisecond), errorC, quitC)
 
@@ -72,7 +70,13 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 
 	last := []byte{}
 
+	if fc.oc == nil {
+		fc.oc = opc.NewClient()
+	}
+
 	if errGo := fc.oc.Connect("tcp", server); errGo != nil {
+
+		fc.oc = nil
 
 		err := errors.Wrap(errGo).With("url", server).With("stack", stack.Trace().TrimRuntime())
 
@@ -112,6 +116,14 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 }
 
 func (fc *FadeCandy) Send(m *opc.Message) (err errors.Error) {
+	if fc.oc == nil {
+		return errors.New("fadecandy server not online").With("stack", stack.Trace().TrimRuntime())
+	}
+
+	if m == nil {
+		return errors.New("invalid message").With("stack", stack.Trace().TrimRuntime())
+	}
+
 	if errGo := fc.oc.Send(m); errGo != nil {
 		return errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime())
 	}
