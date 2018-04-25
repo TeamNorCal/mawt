@@ -189,14 +189,12 @@ func (tec *tecthulhu) sendStatus() {
 //
 func (tec *tecthulhu) Run(quitC <-chan struct{}) {
 
-	poll := time.NewTicker(time.Second)
-	defer poll.Stop()
+	refresh := time.Duration(5 * time.Second)
 
 	for {
 		select {
-		case <-poll.C:
+		case <-time.After(refresh):
 			tec.sendStatus()
-
 		case <-quitC:
 			return
 		}

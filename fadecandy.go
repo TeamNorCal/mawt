@@ -144,9 +144,10 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 		return err
 	}
 
+	refresh := time.Duration(30 * time.Millisecond)
 	for {
 		select {
-		case <-time.After(30 * time.Millisecond):
+		case <-time.After(refresh):
 			// Populate the logical buffers
 			sr.ProcessFrame(time.Now())
 
@@ -189,8 +190,12 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 						m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
 					}
 					if err := fc.Send(m); err != nil {
-						sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+						sendErr(errorC, err)
+						// After a fatal error reduce the frequency of the refresh
+						refresh = time.Duration(5 * time.Second)
+						continue
 					}
+					refresh = time.Duration(30 * time.Millisecond)
 				}
 			}
 		case <-quitC:
