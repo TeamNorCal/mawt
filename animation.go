@@ -14,7 +14,6 @@ import (
 
 	"github.com/TeamNorCal/animation"
 
-	"github.com/kellydunn/go-opc"
 	"github.com/lucasb-eyer/go-colorful"
 )
 
@@ -161,12 +160,11 @@ func GetStrands() (deviceStrands [][]int, err errors.Error) {
 // brightness can be used to scale the brightness, 0 = off, 0.01 1% brightness
 // 1.0 and above 100%
 //
-func test8LED(fc *FadeCandy, brightness float64, status *Status) (err errors.Error) {
+func test8LED(brightness float64, status *Status) (err errors.Error) {
 
 	clr := colorful.Color{}
 
-	m := opc.NewMessage(0)
-	m.SetLength(uint16(8 * 3))
+	aniData := make([]color.RGBA, 8)
 
 	directions := map[string]int{"E": 0, "NE": 1, "N": 2, "NW": 3, "W": 4, "SW": 5, "S": 6, "SE": 7}
 	levels := make([]int, 8, 8)
@@ -203,9 +201,9 @@ func test8LED(fc *FadeCandy, brightness float64, status *Status) (err errors.Err
 			}
 		}
 		r, g, b := clr.RGB255()
-
-		m.SetPixelColor(i, r, g, b)
+		aniData[i] = color.RGBA{r, g, b, 254}
 	}
+	deviceMap.UpdateUniverse(0, aniData)
 
-	return fc.Send(m)
+	return nil
 }

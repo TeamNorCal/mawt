@@ -90,6 +90,11 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 	// Start the LED command message pusher
 	go fc.RunLoop(errorC, quitC)
 
+	//sr, err := GetSeqRunner()
+	//if err != nil {
+	//	return err
+	//}
+
 	for {
 		select {
 		case <-time.After(refresh):
@@ -100,8 +105,13 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 			hash := structhash.Md5(copied, 1)
 			if bytes.Compare(last, hash) != 0 {
 				last = hash
-				// TODO Call InitSequence instead of the hard coded test
-				if err := test8LED(fc, 0.15, copied); err != nil {
+				// TODO Call InitSequence  and then load an effect that is applied
+				// to a specific universe, instead of the hard coded test we have below
+				//seq := Sequence{
+				//	Steps: []Step{},
+				//}
+				//sr.InitSequence(seq, time.now())
+				if err := test8LED(0.15, copied); err != nil {
 					select {
 					case errorC <- err.With("url", server):
 					case <-time.After(100 * time.Millisecond):
@@ -165,7 +175,9 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 				continue
 			}
 			for device, strands := range deviceStrands {
+				strandNum := 0
 				for strand, strandLen := range strands {
+					strandNum++
 					if strandLen == 0 {
 						continue
 					}
@@ -177,6 +189,7 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 						continue
 					}
 
+					strip := fmt.Sprintf("%02d → ", strandNum)
 					// Prepare a message for this strand that has 3 bytes per LED
 					m := opc.NewMessage(0)
 					m.SetLength(uint16(len(strandData) * 3))
@@ -187,12 +200,15 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 							g = 0
 							b = 0
 						}
+						strip += fmt.Sprintf("%s[38;2;%d;%d;%dm█", "\x1b", uint8(r), uint8(g), uint8(b))
 						m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
 					}
 					if err := fc.Send(m); err != nil {
-						sendErr(errorC, err)
+						// sendErr(errorC, err)
+						fmt.Println(strip)
 						// After a fatal error reduce the frequency of the refresh
 						refresh = time.Duration(5 * time.Second)
+						// See if we can print some RGB Values
 						continue
 					}
 					refresh = time.Duration(30 * time.Millisecond)
