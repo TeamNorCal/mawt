@@ -7,8 +7,10 @@ package mawt
 // to the fadecandy server interface
 
 import (
+	"fmt"
 	"image/color"
 	"math"
+	"time"
 
 	"github.com/karlmutch/errors"
 
@@ -160,11 +162,9 @@ func GetStrands() (deviceStrands [][]int, err errors.Error) {
 // brightness can be used to scale the brightness, 0 = off, 0.01 1% brightness
 // 1.0 and above 100%
 //
-func test8LED(brightness float64, status *Status) (err errors.Error) {
+func test8LED(brightness float64, status *Status) (seq *animation.Sequence, err errors.Error) {
 
-	clr := colorful.Color{}
-
-	aniData := make([]color.RGBA, 8)
+	cyc := &PortalCycle{Strip: make([]color.RGBA, 8)}
 
 	directions := map[string]int{"E": 0, "NE": 1, "N": 2, "NW": 3, "W": 4, "SW": 5, "S": 6, "SE": 7}
 	levels := make([]int, 8, 8)
@@ -173,6 +173,8 @@ func test8LED(brightness float64, status *Status) (err errors.Error) {
 			levels[pos] = int(res.Health)
 		}
 	}
+
+	clr := colorful.Color{}
 
 	for i := 0; i < 8; i++ {
 		// For now very simple just the faction and presence of the resonator
@@ -201,9 +203,27 @@ func test8LED(brightness float64, status *Status) (err errors.Error) {
 			}
 		}
 		r, g, b := clr.RGB255()
-		aniData[i] = color.RGBA{r, g, b, 254}
+		cyc.Strip[i] = color.RGBA{r, g, b, 254}
 	}
-	deviceMap.UpdateUniverse(0, aniData)
 
-	return nil
+	seq = &animation.Sequence{
+		Steps: []*animation.Step{
+			&animation.Step{
+				UniverseID: 0,
+				Effect:     cyc,
+			},
+		},
+	}
+
+	return seq, nil
+}
+
+type PortalCycle struct {
+	Strip []color.RGBA
+}
+
+func (cyc PortalCycle) Frame(buf []color.RGBA, frameTime time.Time) bool {
+	fmt.Printf("%+v\n", cyc.Strip)
+	buf = append(buf, cyc.Strip...)
+	return true
 }

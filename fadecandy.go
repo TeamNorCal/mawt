@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TeamNorCal/animation"
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/errors"
 	// colorful "github.com/lucasb-eyer/go-colorful"
@@ -66,7 +67,8 @@ func StartFadeCandy(server string, subscribeC chan chan *PortalMsg, errorC chan<
 	return fc
 }
 
-func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duration, errorC chan<- errors.Error, quitC <-chan struct{}) {
+func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duration,
+	errorC chan<- errors.Error, quitC <-chan struct{}) {
 
 	last := []byte{}
 
@@ -90,14 +92,22 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 	// Start the LED command message pusher
 	go fc.RunLoop(errorC, quitC)
 
-	//sr, err := GetSeqRunner()
-	//if err != nil {
-	//	return err
-	//}
+	sr, err := GetSeqRunner()
+	if err != nil {
+		select {
+		case errorC <- err:
+		case <-time.After(100 * time.Millisecond):
+			fmt.Fprintln(os.Stderr, err.Error())
+		}
+		return
+	}
+
+	tick := time.NewTicker(refresh)
+	defer tick.Stop()
 
 	for {
 		select {
-		case <-time.After(refresh):
+		case <-tick.C:
 			status.Lock()
 			copied := status.status.DeepCopy()
 			status.Unlock()
@@ -107,17 +117,16 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 				last = hash
 				// TODO Call InitSequence  and then load an effect that is applied
 				// to a specific universe, instead of the hard coded test we have below
-				//seq := Sequence{
-				//	Steps: []Step{},
-				//}
-				//sr.InitSequence(seq, time.now())
-				if err := test8LED(0.15, copied); err != nil {
+				seq, err := test8LED(0.15, copied)
+				if err != nil {
 					select {
 					case errorC <- err.With("url", server):
 					case <-time.After(100 * time.Millisecond):
 						fmt.Fprintln(os.Stderr, err.Error())
 					}
+					continue
 				}
+				sr.InitSequence(*seq, time.Now())
 			}
 		case <-quitC:
 			return
@@ -155,9 +164,14 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 	}
 
 	refresh := time.Duration(30 * time.Millisecond)
+	tick := time.NewTicker(refresh)
+	defer tick.Stop()
+
+	opcError := errors.New("")
+
 	for {
 		select {
-		case <-time.After(refresh):
+		case <-tick.C:
 			// Populate the logical buffers
 			sr.ProcessFrame(time.Now())
 
@@ -174,50 +188,64 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 				sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
 				continue
 			}
-			for device, strands := range deviceStrands {
-				strandNum := 0
-				for strand, strandLen := range strands {
-					strandNum++
-					if strandLen == 0 {
-						continue
-					}
-					// The following gives us an array of RGBA as a linear arrangement of LEDs
-					// for the indicated strand
-					strandData, errGo := devices.GetStrandData(uint(device), uint(strand))
-					if errGo != nil {
-						sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
-						continue
-					}
 
-					strip := fmt.Sprintf("%02d → ", strandNum)
-					// Prepare a message for this strand that has 3 bytes per LED
-					m := opc.NewMessage(0)
-					m.SetLength(uint16(len(strandData) * 3))
-					for i, rgba := range strandData {
-						r, g, b, a := rgba.RGBA()
-						if a == 0 {
-							r = 0
-							g = 0
-							b = 0
-						}
-						strip += fmt.Sprintf("%s[38;2;%d;%d;%dm█", "\x1b", uint8(r), uint8(g), uint8(b))
-						m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
-					}
-					if err := fc.Send(m); err != nil {
-						// sendErr(errorC, err)
-						fmt.Println(strip)
-						// After a fatal error reduce the frequency of the refresh
-						refresh = time.Duration(5 * time.Second)
-						// See if we can print some RGB Values
-						continue
-					}
-					refresh = time.Duration(30 * time.Millisecond)
-				}
+			newRefresh := refresh
+			if opcError = fc.updateStrands(devices, deviceStrands, errorC); opcError != nil {
+				newRefresh = time.Duration(time.Second)
+			} else {
+				newRefresh = time.Duration(30 * time.Millisecond)
 			}
+			if newRefresh != refresh {
+				refresh = newRefresh
+				tick.Stop()
+				tick = time.NewTicker(refresh)
+			}
+
 		case <-quitC:
 			return
 		}
 	}
+}
+
+func (fc *FadeCandy) updateStrands(devices animation.Mapping, deviceStrands [][]int, errorC chan<- errors.Error) (err errors.Error) {
+	for device, strands := range deviceStrands {
+		strandNum := 0
+		for strand, strandLen := range strands {
+			strandNum++
+			if strandLen == 0 {
+				continue
+			}
+			// The following gives us an array of RGBA as a linear arrangement of LEDs
+			// for the indicated strand
+			strandData, errGo := devices.GetStrandData(uint(device), uint(strand))
+			if errGo != nil {
+				sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+				continue
+			}
+
+			strip := fmt.Sprintf("%02d → ", strandNum)
+			// Prepare a message for this strand that has 3 bytes per LED
+			m := opc.NewMessage(0)
+			m.SetLength(uint16(len(strandData) * 3))
+			for i, rgba := range strandData {
+				r, g, b, a := rgba.RGBA()
+				if a == 0 {
+					r = 0
+					g = 0
+					b = 0
+				}
+				strip += fmt.Sprintf("%s[38;2;%d;%d;%dm█\x1b[0m", "\x1b", uint8(r), uint8(g), uint8(b))
+				m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
+			}
+			if err = fc.Send(m); err != nil {
+				// sendErr(errorC, err)
+				fmt.Printf("%s\n", strip)
+				// See if we can print some RGB Values
+				break
+			}
+		}
+	}
+	return err
 }
 
 func sendErr(errorC chan<- errors.Error, err errors.Error) {
