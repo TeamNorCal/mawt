@@ -28,6 +28,7 @@ go install github.com/karlmutch/duat/cmd/stencil
 ## Build instructions
 
 ```shell
+sudo apt-get install -y portaudio19-dev libasound2-dev libvorbis-dev alsa-utils alsa-tools alsa-oss alsaplayer mpg321 alsaplayer-alsa alsa-base
 go run build.go
 ```
 
