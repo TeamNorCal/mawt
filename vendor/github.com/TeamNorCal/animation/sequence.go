@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -50,6 +51,7 @@ type SequenceRunner struct {
 	awaitingStep     []stepAndGatingStep // Queue of steps waiting on another step to complete
 	activeByUniverse map[uint][]*Step    // Queue of steps that can be run on a particular universe. Only head of queue is processed
 	buffers          [][]color.RGBA      // Buffers to hold universe data
+	sync.Mutex
 }
 
 var logger = log.New(os.Stdout, "(SEQUENCE) ", 0)
@@ -61,17 +63,18 @@ var logger = log.New(os.Stdout, "(SEQUENCE) ", 0)
 func NewSequenceRunner(universeSizes []uint) (sr *SequenceRunner) {
 
 	sr = &SequenceRunner{
-		// Slices by default are initialized with a length of 0 and a capacity of 8
-		awaitingTime:     []stepAndTime{},
-		awaitingStep:     []stepAndGatingStep{},
-		activeByUniverse: map[uint][]*Step{},
-		buffers:          make([][]color.RGBA, 0, len(universeSizes)),
+		// Slices by default are initialized with a length of 0 and a capacity of 8 preventing
+		// downstream extensions
+		awaitingTime:     make([]stepAndTime, 0, 8),
+		awaitingStep:     make([]stepAndGatingStep, 0, 8),
+		activeByUniverse: make(map[uint][]*Step, 16),
+		buffers:          make([][]color.RGBA, len(universeSizes)),
 	}
 
 	for i, size := range universeSizes {
-		sr.activeByUniverse[uint(i)] = []*Step{}
+		sr.activeByUniverse[uint(i)] = make([]*Step, 0, 8)
 		// Create a slice filled with zero values
-		sr.buffers = append(sr.buffers, make([]color.RGBA, size))
+		sr.buffers[i] = make([]color.RGBA, size)
 	}
 
 	return sr
@@ -90,12 +93,17 @@ func findStep(steps []*Step, stepID int) *Step {
 // start at the provided time. If a sequence is already in process, it will be
 // stopped and the SequenceRunner reinitialized.
 func (sr *SequenceRunner) InitSequence(seq Sequence, now time.Time) {
+	sr.Lock()
+	defer sr.Unlock()
+
 	// Clear structures, no need to leave old slice preallocations
 	// as all slices when initially created are automatically 8
 	// entries from a capacity perspective
-	sr.awaitingTime = []stepAndTime{}
-	sr.awaitingStep = []stepAndGatingStep{}
-	sr.activeByUniverse = map[uint][]*Step{}
+	sr.awaitingTime = sr.awaitingTime[:0]
+	sr.awaitingStep = sr.awaitingStep[:0]
+	for k, v := range sr.activeByUniverse {
+		sr.activeByUniverse[k] = v[:0]
+	}
 
 	// Process the provided sequence steps
 	for idx, step := range seq.Steps {
@@ -152,8 +160,8 @@ func (sr *SequenceRunner) scheduleAt(s *Step, runAt time.Time) {
 
 // Check for steps that are waiting on another step to complete.
 // 'now' is the time that should be considered to be the current time
+//
 func (sr *SequenceRunner) handleStepComplete(completed *Step, now time.Time) {
-
 	uniSteps, isPresent := sr.activeByUniverse[completed.UniverseID]
 	if isPresent {
 		if len(uniSteps) > 0 && uniSteps[0] == completed {
@@ -172,7 +180,7 @@ func (sr *SequenceRunner) handleStepComplete(completed *Step, now time.Time) {
 			} else {
 				// Run immediately
 				if !isPresent {
-					sr.activeByUniverse[s.UniverseID] = []*Step{}
+					sr.activeByUniverse[s.UniverseID] = make([]*Step, 0, 8)
 				}
 				sr.activeByUniverse[s.UniverseID] = append(sr.activeByUniverse[s.UniverseID], s)
 			}
@@ -193,7 +201,7 @@ func (sr *SequenceRunner) checkScheduledTasks(now time.Time) {
 			// Time to run it!
 			s := waiting.toRun
 			if _, isPresent := sr.activeByUniverse[s.UniverseID]; !isPresent {
-				sr.activeByUniverse[s.UniverseID] = []*Step{}
+				sr.activeByUniverse[s.UniverseID] = make([]*Step, 0, 8)
 			}
 			sr.activeByUniverse[s.UniverseID] = append(sr.activeByUniverse[s.UniverseID], s)
 			// Delete this from the list of waiting steps (and don't increment index)
@@ -208,17 +216,23 @@ func (sr *SequenceRunner) checkScheduledTasks(now time.Time) {
 // should be monotonically increasing with each call)
 // Return value indicates whether the sequence is complete.
 func (sr *SequenceRunner) ProcessFrame(now time.Time) (done bool) {
+
 	done = true
+	effectDone := false
+
+	sr.Lock()
+	defer sr.Unlock()
+
 	sr.checkScheduledTasks(now)
+
 	for universeID, universe := range sr.activeByUniverse {
 		if len(universe) > 0 {
 			// We have an active step on this universe
 			s := universe[0]
 			// ...so we're not done yet
 			done = false
-			// Process the animation for the universe
-			effectDone := s.Effect.Frame(sr.buffers[universeID], now)
-			if effectDone {
+			// Process the animation for the universe, first clear the slice
+			if sr.buffers[universeID], effectDone = s.Effect.Frame(sr.buffers[universeID], now); effectDone {
 				sr.handleStepComplete(s, now)
 			}
 		}
@@ -231,5 +245,8 @@ func (sr *SequenceRunner) ProcessFrame(now time.Time) (done bool) {
 // UniverseData gets current data for the specified universe. This data is
 // updated by calling ProcessFrame for the universe
 func (sr *SequenceRunner) UniverseData(UniverseID uint) []color.RGBA {
+	sr.Lock()
+	defer sr.Unlock()
+
 	return sr.buffers[UniverseID]
 }

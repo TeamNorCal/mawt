@@ -7,7 +7,6 @@ package mawt
 // to the fadecandy server interface
 
 import (
-	"fmt"
 	"image/color"
 	"math"
 	"time"
@@ -50,6 +49,8 @@ var (
 	// by clients of the animation library when ever they need
 	// a sequence runner
 	universeSizes = []uint{}
+
+	seqRunner = &animation.SequenceRunner{}
 )
 
 func init() {
@@ -109,6 +110,8 @@ func init() {
 		}
 		universeSizes = append(universeSizes, size)
 	}
+
+	seqRunner = animation.NewSequenceRunner(universeSizes)
 }
 
 type Color struct {
@@ -141,7 +144,7 @@ func init() {
 }
 
 func GetSeqRunner() (sr *animation.SequenceRunner, err errors.Error) {
-	return animation.NewSequenceRunner(universeSizes), nil
+	return seqRunner, nil
 }
 
 func GetUniverses() (devices animation.Mapping, uniIds []uint, err errors.Error) {
@@ -222,8 +225,7 @@ type PortalCycle struct {
 	Strip []color.RGBA
 }
 
-func (cyc PortalCycle) Frame(buf []color.RGBA, frameTime time.Time) bool {
-	fmt.Printf("%+v\n", cyc.Strip)
-	buf = append(buf, cyc.Strip...)
-	return true
+func (cyc PortalCycle) Frame(buf []color.RGBA, frameTime time.Time) (output []color.RGBA, done bool) {
+	output = append(buf[:0], cyc.Strip...)
+	return output, true
 }
