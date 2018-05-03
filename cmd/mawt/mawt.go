@@ -27,6 +27,7 @@ import (
 var (
 	logger = logxi.New("mawt")
 
+	terminal   = flag.Bool("term", false, "Used to define if a text user interface is being used")
 	verbose    = flag.Bool("v", false, "When enabled will print internal logging for this tool")
 	tecthulhus = flag.String("tecthulhus", "http://127.0.0.1:12345/", "A comma seperated list of IP based tecthulhus, the first being the 'home' portal")
 )
@@ -124,6 +125,7 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 
 	// error reporting comes back to the application for determinaing if anything needs doing
 	errorC := make(chan errors.Error, 1)
+	msgC := make(chan string, 1)
 
 	// Setup a channel to allow a CTRL-C to terminate all processing.  When the CTRL-C
 	// occurs we cancel the background msg pump processing pubsub mesages from
@@ -133,10 +135,24 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 	go func() {
 		defer cancel()
 
+		eC := errorC
+		mC := msgC
+
+		if *terminal {
+			eC = nil
+			mC = nil
+		}
+
 		for {
 			select {
-			case err := <-errorC:
-				logger.Warn(err.Error())
+			case err := <-eC:
+				if err != nil {
+					logger.Warn(err.Error())
+				}
+			case msg := <-mC:
+				if len(msg) > 0 {
+					fmt.Print(msg)
+				}
 			case <-quitC:
 				return
 			case <-stopC:
@@ -149,15 +165,18 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 
 	signal.Notify(stopC, os.Interrupt, syscall.SIGTERM)
 
-	return startServer(ctx, errorC)
+	return startServer(ctx, msgC, errorC)
 }
 
 // Now start initializing the servers processing components
-func startServer(ctx context.Context, errorC chan<- errors.Error) (errs []errors.Error) {
+func startServer(ctx context.Context, msgC chan string, errorC chan errors.Error) (errs []errors.Error) {
 
 	if err := initOPC(ctx.Done()); err != nil {
 		errs = append(errs, err)
 	}
+
+	// Eventually hook up error and message streams
+	go runTUI(msgC, errorC, ctx.Done())
 
 	gw := &mawt.Gateway{}
 

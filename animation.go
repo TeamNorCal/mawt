@@ -7,6 +7,7 @@ package mawt
 // to the fadecandy server interface
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 	"time"
@@ -31,12 +32,68 @@ var (
 	// the setup phase that can be used when invoking library calls later
 	// without hard coded values and loops sitting around.
 	universes = map[string][]animation.PhysicalRange{
-		"test": []animation.PhysicalRange{
+		"base1": []animation.PhysicalRange{
 			animation.PhysicalRange{
 				Board:      0,
 				Strand:     0,
 				StartPixel: 0,
-				Size:       8,
+				Size:       30,
+			},
+		},
+		"base2": []animation.PhysicalRange{
+			animation.PhysicalRange{
+				Board:      0,
+				Strand:     0,
+				StartPixel: 30,
+				Size:       30,
+			},
+		},
+		"base3": []animation.PhysicalRange{
+			animation.PhysicalRange{
+				Board:      0,
+				Strand:     1,
+				StartPixel: 0,
+				Size:       30,
+			},
+		},
+		"base4": []animation.PhysicalRange{
+			animation.PhysicalRange{
+				Board:      0,
+				Strand:     1,
+				StartPixel: 30,
+				Size:       30,
+			},
+		},
+		"base5": []animation.PhysicalRange{
+			animation.PhysicalRange{
+				Board:      0,
+				Strand:     2,
+				StartPixel: 0,
+				Size:       30,
+			},
+		},
+		"base6": []animation.PhysicalRange{
+			animation.PhysicalRange{
+				Board:      0,
+				Strand:     2,
+				StartPixel: 30,
+				Size:       30,
+			},
+		},
+		"base7": []animation.PhysicalRange{
+			animation.PhysicalRange{
+				Board:      0,
+				Strand:     3,
+				StartPixel: 0,
+				Size:       30,
+			},
+		},
+		"base8": []animation.PhysicalRange{
+			animation.PhysicalRange{
+				Board:      0,
+				Strand:     3,
+				StartPixel: 30,
+				Size:       30,
 			},
 		},
 	}
@@ -70,7 +127,7 @@ func init() {
 				boards[physRange.Board][physRange.Strand] = int(physRange.StartPixel + physRange.Size)
 			} else {
 				if extent < int(physRange.StartPixel+physRange.Size) {
-					boards[physRange.Board][physRange.Strand] = int(physRange.Size)
+					boards[physRange.Board][physRange.Strand] = int(physRange.StartPixel + physRange.Size)
 				}
 			}
 		}
@@ -86,6 +143,7 @@ func init() {
 		// the indexed slice for the physical view
 		for strand, strandLen := range board {
 			cfgStrands[i][strand] = strandLen
+			fmt.Printf("Board %d Strand %d Length %d\n", i, strand, strandLen)
 		}
 	}
 

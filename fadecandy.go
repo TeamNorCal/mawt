@@ -162,6 +162,8 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 	if err != nil {
 		return err
 	}
+	fmt.Println(devices)
+	fmt.Println(universes)
 
 	refresh := time.Duration(30 * time.Millisecond)
 	tick := time.NewTicker(refresh)
@@ -178,7 +180,9 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 			// Copy the logical buffers into the physical buffers
 
 			for _, id := range universes {
-				devices.UpdateUniverse(id, sr.UniverseData(id))
+				if errGo := devices.UpdateUniverse(id, sr.UniverseData(id)); errGo != nil {
+					sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+				}
 			}
 
 			// Iterate across physical strands sending updates to the
