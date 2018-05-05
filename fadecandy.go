@@ -117,7 +117,7 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 				last = hash
 				// TODO Call InitSequence  and then load an effect that is applied
 				// to a specific universe, instead of the hard coded test we have below
-				seq, err := test8LED(0.15, copied)
+				seq, err := testAllLEDs(0.15, copied)
 				if err != nil {
 					select {
 					case errorC <- err.With("url", server):
@@ -195,7 +195,7 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 
 			newRefresh := refresh
 			if opcError = fc.updateStrands(devices, deviceStrands, errorC); opcError != nil {
-				newRefresh = time.Duration(time.Second)
+				newRefresh = time.Duration(250 * time.Millisecond)
 			} else {
 				newRefresh = time.Duration(30 * time.Millisecond)
 			}
@@ -211,7 +211,24 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 	}
 }
 
+var (
+	headingOnce sync.Once
+
+	onceBody = func() {
+		fmt.Printf("\x1b[1;0H\x1b[0J       ")
+		for i := 1; i != 10; i++ {
+			fmt.Printf("         %d", i)
+		}
+		fmt.Printf("\n       ")
+		for i := 1; i != 10; i++ {
+			fmt.Print("1234567890")
+		}
+	}
+)
+
 func (fc *FadeCandy) updateStrands(devices animation.Mapping, deviceStrands [][]int, errorC chan<- errors.Error) (err errors.Error) {
+	headingOnce.Do(onceBody)
+	fmt.Printf("\x1b[3;0H")
 	for device, strands := range deviceStrands {
 		strandNum := 0
 		for strand, strandLen := range strands {
@@ -227,7 +244,7 @@ func (fc *FadeCandy) updateStrands(devices animation.Mapping, deviceStrands [][]
 				continue
 			}
 
-			strip := fmt.Sprintf("%02d → ", strandNum)
+			strip := fmt.Sprintf("%02d %d → ", device, strandNum)
 			// Prepare a message for this strand that has 3 bytes per LED
 			m := opc.NewMessage(0)
 			m.SetLength(uint16(len(strandData) * 3))
@@ -238,14 +255,13 @@ func (fc *FadeCandy) updateStrands(devices animation.Mapping, deviceStrands [][]
 					g = 0
 					b = 0
 				}
-				strip += fmt.Sprintf("%s[38;2;%d;%d;%dm█\x1b[0m", "\x1b", uint8(r), uint8(g), uint8(b))
+				strip += fmt.Sprintf("\x1b[38;2;%d;%d;%dm█\x1b[0m", uint8(r), uint8(g), uint8(b))
 				m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
 			}
 			if err = fc.Send(m); err != nil {
 				// sendErr(errorC, err)
+				// If there is an error print the RGB Values instead
 				fmt.Printf("%s\n", strip)
-				// See if we can print some RGB Values
-				break
 			}
 		}
 	}
