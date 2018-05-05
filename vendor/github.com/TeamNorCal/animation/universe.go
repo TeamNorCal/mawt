@@ -29,7 +29,7 @@ type Mapping struct {
 	universes [][]location
 
 	// Mapping from universe name to universe ID
-	universeIDuniverseNameToID map[string]int
+	uniNameToIndex map[string]int
 }
 
 // PhysicalRange defines a range of physical pixels within asingle strand
@@ -44,8 +44,11 @@ type PhysicalRange struct {
 func NewMapping(dimension [][]int) Mapping {
 	// Make the triply-nested physical buffer structure based on the provided dimensions
 	// Allocate space for a reasonable number of universes
-	m := Mapping{make([][][]color.RGBA, len(dimension)), make([][]location, 10)[:0],
-		make(map[string]int)}
+	m := Mapping{
+		physBuf:        make([][][]color.RGBA, len(dimension)),
+		universes:      make([][]location, 0, 16),
+		uniNameToIndex: make(map[string]int),
+	}
 	for boardIdx := range dimension {
 		m.physBuf[boardIdx] = make([][]color.RGBA, len(dimension[boardIdx]))
 		for strandIdx := range dimension[boardIdx] {
@@ -63,7 +66,7 @@ func NewMapping(dimension [][]int) Mapping {
 // Returns true if the universe was successfully added; returns false if the
 // universe name already exists or a specified physical pixel doesn't exist.
 func (m *Mapping) AddUniverse(name string, ranges []PhysicalRange) bool {
-	if _, exists := m.universeIDuniverseNameToID[name]; exists {
+	if _, exists := m.uniNameToIndex[name]; exists {
 		return false
 	}
 	// Figure out the size
@@ -84,14 +87,14 @@ func (m *Mapping) AddUniverse(name string, ranges []PhysicalRange) bool {
 
 	// Add the universe to the structure
 	m.universes = append(m.universes, locs)
-	m.universeIDuniverseNameToID[name] = len(m.universes) - 1
+	m.uniNameToIndex[name] = len(m.universes) - 1
 	return true
 }
 
 // IDForUniverse gets the internal ID associated with the given universe name.
 // Returns error and large invalid ID if universe name is not found
 func (m *Mapping) IDForUniverse(universeName string) (uint, error) {
-	id, ok := m.universeIDuniverseNameToID[universeName]
+	id, ok := m.uniNameToIndex[universeName]
 	if !ok {
 		return math.MaxUint32, fmt.Errorf("\"%s\" is not a known universe", universeName)
 	}
@@ -100,11 +103,15 @@ func (m *Mapping) IDForUniverse(universeName string) (uint, error) {
 
 // UpdateUniverse updates physical pixel color values for pixels corresponding
 // to the provided universe.
-func (m *Mapping) UpdateUniverse(universeID uint, universeData []color.RGBA) {
-	u := m.universes[universeID]
+func (m *Mapping) UpdateUniverse(id uint, rgbData []color.RGBA) (err error) {
+	u := m.universes[id]
 	for idx, l := range u {
-		m.physBuf[l.board][l.strand][l.pixel] = universeData[idx]
+		if idx >= len(rgbData) {
+			return fmt.Errorf("RGB values (%d) not long enough for universe %d (%+v)", len(rgbData), id, l)
+		}
+		m.physBuf[l.board][l.strand][l.pixel] = rgbData[idx]
 	}
+	return nil
 }
 
 // GetStrandData returns color data for a physical strand. The slice returned
