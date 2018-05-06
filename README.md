@@ -43,3 +43,38 @@ LOGXI=*=DBG /home/pi/mawt/bin/mawt
 ```shell
 LOGXI=*=DBG go run cmd/simulator/*.go -path assets/simulator/portal_builds
 ```
+
+
+## fcserver configuration
+
+fcserver should be run using the following config.json file
+
+```shell
+{
+    "listen": ["0.0.0.0", 7890],
+    "relay":  [null, 7891],
+    "verbose": true,
+
+    "color": {
+        "gamma": 2.5,
+        "whitepoint": [1.0, 1.0, 1.0]
+    },
+
+    "devices": [
+        {
+            "type": "fadecandy",
+            "serial": "AMWPGCSIYCRCKYHL",
+            "map": [
+                [ 1, 0, 0, 64 ],
+                [ 2, 0, 64, 64 ],
+                [ 3, 0, 128, 64 ],
+                [ 4, 0, 192, 64 ],
+                [ 6, 0, 256, 64 ],
+                [ 7, 0, 320, 64 ],
+                [ 8, 0, 384, 64 ]
+                [ 9, 0, 448, 64 ]
+            ]
+        }
+    ]
+}
+```
