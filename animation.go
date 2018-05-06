@@ -120,6 +120,16 @@ var (
 				},
 			},
 		},
+		"testStrip": universe{
+			ranges: []animation.PhysicalRange{
+				animation.PhysicalRange{
+					Board:      0,
+					Strand:     7,
+					StartPixel: 0,
+					Size:       8,
+				},
+			},
+		},
 		"towerLevel1Window1": universe{
 			ranges: []animation.PhysicalRange{
 				animation.PhysicalRange{
@@ -317,17 +327,31 @@ func init() {
 		}
 	}
 
+	// Get the maximum number of strands that have been seen of our boards
+	maxStrand := map[uint]uint{}
+	for board, strands := range boards {
+		for strand, _ := range strands {
+			if max, isPresent := maxStrand[board]; !isPresent {
+				maxStrand[board] = strand
+			} else {
+				if strand > max {
+					maxStrand[board] = strand
+				}
+			}
+		}
+	}
+
 	// Now for every board get the length of its strand map and use that to initial the arrays needed
 	// for physical boards, and stand lengths
 	cfgStrands = make([][]int, len(boards))
 	for i, board := range boards {
-		// Add the strand array using the length of the individual board maps
-		cfgStrands[i] = make([]int, len(board))
+		// Add the strand array using the maximum known strand of the individual boards
+		cfgStrands[i] = make([]int, maxStrand[i]+1)
 		// Now within the board map visit each known strand and places its length into
 		// the indexed slice for the physical view
 		for strand, strandLen := range board {
-			cfgStrands[i][strand] = strandLen
 			fmt.Printf("Board %d Strand %d Length %d\n", i, strand, strandLen)
+			cfgStrands[i][strand] = strandLen
 		}
 	}
 
@@ -448,7 +472,12 @@ func testAllLEDs(brightness float64, status *Status) (seq *animation.Sequence, e
 			}
 			res = reso - 1
 		}
+
 		for i := 0; i < len(cyc.Strip); i++ {
+			if res > 7 || strings.HasPrefix(k, "test") {
+				res = i % 7
+			}
+
 			// For now very simple just the faction and presence of the resonator
 			switch status.Faction {
 			case "E":
