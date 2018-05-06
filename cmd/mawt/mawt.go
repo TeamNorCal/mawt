@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -12,6 +13,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	_ "net/http/pprof"
 
 	"github.com/mgutz/logxi" // Using a forked copy of this package results in build issues
 
@@ -118,6 +121,10 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 	errs = []errors.Error{}
 
 	defer close(doneC)
+
+	go func() {
+		http.ListenAndServe("0.0.0.0:6060", nil)
+	}()
 
 	// Supplying the context allows the client to pubsub to cancel the
 	// blocking receive inside the run

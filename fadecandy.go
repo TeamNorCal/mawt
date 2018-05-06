@@ -22,6 +22,10 @@ import (
 	"github.com/kellydunn/go-opc"
 )
 
+var (
+	updating sync.Mutex
+)
+
 type LastStatus struct {
 	status *Status
 	sync.Mutex
@@ -117,7 +121,9 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 				last = hash
 				// TODO Call InitSequence  and then load an effect that is applied
 				// to a specific universe, instead of the hard coded test we have below
+				updating.Lock()
 				seq, err := testAllLEDs(0.15, copied)
+				updating.Unlock()
 				if err != nil {
 					select {
 					case errorC <- err.With("url", server):
@@ -174,6 +180,7 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 	for {
 		select {
 		case <-tick.C:
+			updating.Lock()
 			// Populate the logical buffers
 			sr.ProcessFrame(time.Now())
 
@@ -190,6 +197,7 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 			deviceStrands, errGo := GetStrands()
 			if errGo != nil {
 				sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+				updating.Unlock()
 				continue
 			}
 
@@ -199,6 +207,8 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 			} else {
 				newRefresh = time.Duration(30 * time.Millisecond)
 			}
+			updating.Unlock()
+
 			if newRefresh != refresh {
 				refresh = newRefresh
 				tick.Stop()
@@ -217,12 +227,13 @@ var (
 	onceBody = func() {
 		fmt.Printf("\x1b[1;0H\x1b[0J       ")
 		for i := 1; i != 10; i++ {
-			fmt.Printf("         %d", i)
+			fmt.Printf("     ")
 		}
-		fmt.Printf("\n       ")
+		fmt.Printf("\n           ")
 		for i := 1; i != 10; i++ {
 			fmt.Print("1234567890")
 		}
+		fmt.Printf("\x1b[20;0H")
 	}
 )
 
@@ -232,8 +243,13 @@ func (fc *FadeCandy) updateStrands(devices animation.Mapping, deviceStrands [][]
 	for device, strands := range deviceStrands {
 		strandNum := 0
 		for strand, strandLen := range strands {
+			// The OPC protocol assigns a channel per LED strand, and supports a maximum of
+			// 255 strands per server.  Channel 0 is a broadcast channel.
+			channel := uint8((device * 8) + strand + 1)
+			strip := fmt.Sprintf("%02d %d  → ", device, strandNum)
 			strandNum++
 			if strandLen == 0 {
+				fmt.Println(strip)
 				continue
 			}
 			// The following gives us an array of RGBA as a linear arrangement of LEDs
@@ -244,9 +260,8 @@ func (fc *FadeCandy) updateStrands(devices animation.Mapping, deviceStrands [][]
 				continue
 			}
 
-			strip := fmt.Sprintf("%02d %d → ", device, strandNum)
 			// Prepare a message for this strand that has 3 bytes per LED
-			m := opc.NewMessage(0)
+			m := opc.NewMessage(channel)
 			m.SetLength(uint16(len(strandData) * 3))
 			for i, rgba := range strandData {
 				r, g, b, a := rgba.RGBA()
@@ -259,11 +274,11 @@ func (fc *FadeCandy) updateStrands(devices animation.Mapping, deviceStrands [][]
 				m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
 			}
 			if err = fc.Send(m); err != nil {
-				// sendErr(errorC, err)
-				// If there is an error print the RGB Values instead
-				fmt.Printf("%s\n", strip)
+				sendErr(errorC, err)
 			}
+			fmt.Println(strip)
 		}
+		fmt.Printf("\x1b[20;0H")
 	}
 	return err
 }
