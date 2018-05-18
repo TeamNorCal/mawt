@@ -78,7 +78,7 @@ fcserver should be run using the following config.json file
                 [ 4, 0, 192, 64 ],
                 [ 6, 0, 256, 64 ],
                 [ 7, 0, 320, 64 ],
-                [ 8, 0, 384, 64 ]
+                [ 8, 0, 384, 64 ],
                 [ 9, 0, 448, 64 ]
             ]
         }
