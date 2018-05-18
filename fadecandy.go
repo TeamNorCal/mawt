@@ -32,7 +32,8 @@ type LastStatus struct {
 }
 
 type FadeCandy struct {
-	oc *opc.Client
+	oc  *opc.Client
+	nop bool // Used to set the server into a test mode with no fcserver present
 }
 
 // This file contains the implementation of a listener for tecthulhu events that will on
@@ -64,7 +65,9 @@ func StartFadeCandy(server string, subscribeC chan chan *PortalMsg, errorC chan<
 		}
 	}()
 
-	fc = &FadeCandy{}
+	fc = &FadeCandy{
+		nop: server == "/dev/null",
+	}
 
 	go fc.run(status, server, time.Duration(200*time.Millisecond), errorC, quitC)
 
@@ -76,20 +79,22 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 
 	last := []byte{}
 
-	if fc.oc == nil {
-		fc.oc = opc.NewClient()
-	}
+	if !fc.nop {
+		if fc.oc == nil {
+			fc.oc = opc.NewClient()
+		}
 
-	if errGo := fc.oc.Connect("tcp", server); errGo != nil {
+		if errGo := fc.oc.Connect("tcp", server); errGo != nil {
 
-		fc.oc = nil
+			fc.oc = nil
 
-		err := errors.Wrap(errGo).With("url", server).With("stack", stack.Trace().TrimRuntime())
+			err := errors.Wrap(errGo).With("url", server).With("stack", stack.Trace().TrimRuntime())
 
-		select {
-		case errorC <- err:
-		case <-time.After(100 * time.Millisecond):
-			fmt.Fprintln(os.Stderr, err.Error())
+			select {
+			case errorC <- err:
+			case <-time.After(100 * time.Millisecond):
+				fmt.Fprintln(os.Stderr, err.Error())
+			}
 		}
 	}
 
@@ -141,6 +146,9 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 }
 
 func (fc *FadeCandy) Send(m *opc.Message) (err errors.Error) {
+	if fc.nop {
+		return nil
+	}
 	if fc.oc == nil {
 		return errors.New("fadecandy server not online").With("stack", stack.Trace().TrimRuntime())
 	}

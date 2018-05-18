@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-stack/stack"
@@ -18,6 +17,96 @@ import (
 // with the tecthulhu device.  These devices can provide a WiFi
 // like capability, however the original documentation appears
 // to indicate a serial like communications peripheral
+//
+// The following json shows example output from a tecthulhu used
+// for the 2018 season
+//
+//{
+//    "result": {
+//        "controllingFaction": "Resistance",
+//        "level": 6,
+//        "health": 99,
+//        "owner": "puntila",
+//        "title": "Crab Mosaic",
+//        "description": null,
+//        "coverImageUrl": "http://lh3.ggpht.com/rF4RNr3xmVnLep_3WmJPCcnzBtKl3z74vc2mlaHpF0K9bVieZb_61w0fygAGUCduYzB47sRXbcajUk8-5bxmVg",
+//        "attribution": "PennIsMightier",
+//        "mods": [
+//            {
+//                "type": "Portal Shield",
+//                "rarity": "Common",
+//                "owner": "dorkus",
+//                "slot": 1
+//            },
+//            {
+//                "type": "Turret",
+//                "rarity": "Rare",
+//                "owner": "slackfarmer",
+//                "slot": 3
+//            },
+//            {
+//                "type": "Portal Shield",
+//                "rarity": "Common",
+//                "owner": "dorkus",
+//                "slot": 4
+//            }
+//        ],
+//        "resonators": [
+//            {
+//                "level": 6,
+//                "health": 98,
+//                "owner": "NumberSix",
+//                "position": "E"
+//            },
+//            {
+//                "level": 7,
+//                "health": 100,
+//                "owner": "NumberSix",
+//                "position": "NE"
+//            },
+//            {
+//                "level": 8,
+//                "health": 100,
+//                "owner": "NumberSix",
+//                "position": "N"
+//            },
+//            {
+//                "level": 6,
+//                "health": 100,
+//                "owner": "NumberSix",
+//                "position": "NW"
+//            },
+//            {
+//                "level": 7,
+//                "health": 100,
+//                "owner": "dorkus",
+//                "position": "W"
+//            },
+//            {
+//                "level": 8,
+//                "health": 99,
+//                "owner": "dorkus",
+//                "position": "SW"
+//            },
+//            {
+//                "level": 5,
+//                "health": 99,
+//                "owner": "NumberSix",
+//                "position": "S"
+//            },
+//            {
+//                "level": 5,
+//                "health": 95,
+//                "owner": "NumberSix",
+//                "position": "SE"
+//            }
+//        ]
+//    },
+//    "message": null,
+//    "code": "OK",
+//    "fieldErrors": null
+//}
+//
 
 type tResonator struct {
 	Position string `json:"position"`
@@ -26,18 +115,26 @@ type tResonator struct {
 	Owner    string `json:"owner"`
 }
 
+type tMod struct {
+	Type   string `json:"type"`
+	Rarity string `json:"rarity"`
+	Owner  string `json:"owner"`
+	Slot   int    `json:"slot"`
+}
+
 type tStatus struct {
 	Title      string       `json:"title"`
 	Owner      string       `json:"owner"`
 	Level      int          `json:"level"`
 	Health     int          `json:"health"`
 	Faction    string       `json:"controllingFaction"`
-	Mods       []string     `json:"mods"`
+	Mods       []tMod       `json:"mods"`
 	Resonators []tResonator `json:"resonators"`
 }
 
 type tPortalStatus struct {
-	State tStatus `json:"status"`
+	State tStatus `json:"result"`
+	Code  string  `json:"code"`
 }
 
 type PortalMon interface {
@@ -81,23 +178,14 @@ func (tec *tPortalStatus) status() (state *portalStatus) {
 				Owner:    res.Owner,
 			})
 	}
-	switch tec.State.Faction {
-	case "1":
-		state.Status.Faction = "E" // Wnlightened
-	case "2":
-		state.Status.Faction = "R" // Resistance
-	default:
-		state.Status.Faction = "N" // Neutral
-
-	}
-	for i, modStr := range tec.State.Mods {
-		newMod := Mod{Slot: float32(i)}
-		modParts := strings.Split(modStr, "-")
-		if len(modParts) == 2 {
-			// 'C'ommon, 'R'are, 'VR' very rare
-			newMod.Rarity = modParts[1]
+	state.Status.Faction = string(tec.State.Faction[0])
+	for _, mod := range tec.State.Mods {
+		newMod := Mod{
+			Slot:   float32(mod.Slot),
+			Type:   mod.Type,
+			Owner:  mod.Owner,
+			Rarity: mod.Rarity,
 		}
-		newMod.Type = modParts[0]
 		state.Status.Mods = append(state.Status.Mods, newMod)
 	}
 	return state

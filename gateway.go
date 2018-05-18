@@ -11,7 +11,7 @@ import (
 type Gateway struct {
 }
 
-func (*Gateway) Start(errorC chan<- errors.Error, quitC <-chan struct{}) (tectC chan *PortalMsg, subscribeC chan chan *PortalMsg) {
+func (*Gateway) Start(server string, errorC chan<- errors.Error, quitC <-chan struct{}) (tectC chan *PortalMsg, subscribeC chan chan *PortalMsg) {
 
 	tectC, subscribeC = startFanOut(quitC)
 
@@ -21,7 +21,7 @@ func (*Gateway) Start(errorC chan<- errors.Error, quitC <-chan struct{}) (tectC 
 	//
 	go StartSFX(subscribeC, errorC, quitC)
 
-	StartFadeCandy("127.0.0.1:7890", subscribeC, errorC, quitC)
+	StartFadeCandy(server, subscribeC, errorC, quitC)
 
 	return tectC, subscribeC
 }
