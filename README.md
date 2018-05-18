@@ -45,6 +45,10 @@ go run build.go
 LOGXI=*=DBG /home/pi/mawt/bin/mawt
 ```
 
+mawt supports testing without fadecandy devices by specifying the -server option with the value /dev/null.
+
+Using the 2018 test server for tecthulhu messages can be done using the -tecthulhus option with the value http://operation-wigwam.ingress.com:8080/v1/test-info.
+
 ## Running the simulator using scenario files
 
 ```shell
