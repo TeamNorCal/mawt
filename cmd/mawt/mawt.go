@@ -30,6 +30,7 @@ import (
 var (
 	logger = logxi.New("mawt")
 
+	fcserver   = flag.String("server", "127.0.0.1:7890", "the ip and port for the fadecandy server (use /dev/null if none present)")
 	terminal   = flag.Bool("term", false, "Used to define if a text user interface is being used")
 	verbose    = flag.Bool("v", false, "When enabled will print internal logging for this tool")
 	tecthulhus = flag.String("tecthulhus", "http://127.0.0.1:12345/", "A comma seperated list of IP based tecthulhus, the first being the 'home' portal")
@@ -187,7 +188,7 @@ func startServer(ctx context.Context, msgC chan string, errorC chan errors.Error
 
 	gw := &mawt.Gateway{}
 
-	statusC, subscribeC := gw.Start(errorC, ctx.Done())
+	statusC, subscribeC := gw.Start(*fcserver, errorC, ctx.Done())
 
 	portals := strings.Split(*tecthulhus, ",")
 	for i, portal := range portals {
