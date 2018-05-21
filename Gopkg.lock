@@ -32,12 +32,6 @@
   revision = "ffb8be34fd4eae7d7c34e6af18afe081ecb39a3d"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/TeamNorCal/portalmodel"
-  packages = ["."]
-  revision = "2085d8b981abe2858bb2ed20c38f9babdeca94f3"
-
-[[projects]]
   name = "github.com/aokoli/goutils"
   packages = ["."]
   revision = "3391d3790d23d03408670993e957e8f408993c34"
