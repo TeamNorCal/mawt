@@ -12,6 +12,10 @@ import (
 // Animation is an interface for types that support generation of animation
 // frames
 type Animation interface {
+	// Start the effect with the provided start time. All frame times should be at
+	// this time or later
+	Start(startTime time.Time)
+
 	// Generate a frame appropriate for the given Time
 	// buf is a buffer into which the frame should be generated. The buffer size
 	// determines the number of LEDs to generate a frame for. Values are RGB color
