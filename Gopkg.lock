@@ -26,13 +26,13 @@
   version = "v0.4.7"
 
 [[projects]]
-  branch = "effects_development"
+  branch = "master"
   name = "github.com/TeamNorCal/animation"
   packages = [
     ".",
     "model"
   ]
-  revision = "7426f5460dda03b4c1949a90e690707641746aea"
+  revision = "d1f39cb5d95c26aa11777b6bd29b7bf8d561240e"
 
 [[projects]]
   name = "github.com/aokoli/goutils"

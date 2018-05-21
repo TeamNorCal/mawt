@@ -107,7 +107,7 @@ type SequenceRunner struct {
 	sync.Mutex
 }
 
-var logger = log.New(os.Stdout, "(SEQUENCE) ", 0)
+var logger = log.New(os.Stderr, "(SEQUENCE) ", 0)
 
 // NewSequenceRunner creates a SequenceRunner for the provided sequence with the
 // specified universe sizes. These size indicate the number of pixels in each

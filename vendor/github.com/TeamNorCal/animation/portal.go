@@ -91,36 +91,42 @@ func NewPortal() *Portal {
 	}
 }
 
-func externalStatusToInternal(external *ingressModel.Status) *PortalStatus {
-	var faction Faction
+func externalStatusToInternal(external *ingressModel.Status) (status *PortalStatus) {
+	status = &PortalStatus{
+		Faction:    NEU,
+		Level:      external.Level,
+		Resonators: make([]ResonatorStatus, numResos),
+	}
+
 	switch external.Faction {
 	case "E":
-		faction = ENL
+		status.Faction = ENL
 	case "R":
-		faction = RES
+		status.Faction = RES
 	case "N":
-		faction = NEU
 	default:
-		panic(fmt.Sprintf("Unexpected faction in external status: %s", external.Faction))
+		fmt.Printf("Treating unexpected faction in external status as neutral: '%s'\n", external.Faction)
 	}
 
 	resos := make([]ResonatorStatus, numResos)
-	if len(external.Resonators) != numResos {
-		panic(fmt.Sprintf("Number of resonators in external status is %d, not the expected %d", len(external.Resonators), numResos))
-	}
+	numResosInStatus := len(external.Resonators)
 
 	for idx := range resos {
-		resos[idx] = ResonatorStatus{
-			Health: external.Resonators[idx].Health,
-			Level:  int(external.Resonators[idx].Level),
+		// TODO: Honor resonator position in status here
+		if idx < numResosInStatus {
+			status.Resonators[idx] = ResonatorStatus{
+				Health: external.Resonators[idx].Health,
+				Level:  int(external.Resonators[idx].Level),
+			}
+		} else {
+			// Treat missing reso as undeployed
+			status.Resonators[idx] = ResonatorStatus{
+				Health: 0.0,
+				Level:  0,
+			}
 		}
 	}
-
-	return &PortalStatus{
-		Faction:    faction,
-		Level:      external.Level,
-		Resonators: resos,
-	}
+	return status
 }
 
 // UpdateFromCanonicalStatus updates the animation with the status of the portal,
