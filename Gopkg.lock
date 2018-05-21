@@ -32,7 +32,7 @@
     ".",
     "model"
   ]
-  revision = "af8b2a4ba881902c55d5572813a000a2980d1006"
+  revision = "32de5e8535c7a6e5cfe03f6298e2bbb44ea45671"
 
 [[projects]]
   name = "github.com/aokoli/goutils"

@@ -125,10 +125,10 @@ func externalStatusToInternal(external *ingressModel.Status) (status *PortalStat
 	resos := make([]ResonatorStatus, numResos)
 
 	resosByIndex := make(map[int]*ingressModel.Resonator)
-	for _, reso := range external.Resonators {
+	for resoIdx, reso := range external.Resonators {
 		index, isPresent := resoPositionToIndex[reso.Position]
 		if isPresent {
-			resosByIndex[index] = &reso
+			resosByIndex[index] = &external.Resonators[resoIdx]
 		} else {
 			fmt.Fprintf(os.Stderr, "Resonator with unknown position %v ignored: %v",
 				reso.Position, reso)
