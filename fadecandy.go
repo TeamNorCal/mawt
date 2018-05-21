@@ -101,16 +101,6 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 	// Start the LED command message pusher
 	go fc.RunLoop(errorC, quitC)
 
-	sr, err := GetSeqRunner()
-	if err != nil {
-		select {
-		case errorC <- err:
-		case <-time.After(100 * time.Millisecond):
-			fmt.Fprintln(os.Stderr, err.Error())
-		}
-		return
-	}
-
 	tick := time.NewTicker(refresh)
 	defer tick.Stop()
 
@@ -124,24 +114,45 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 			hash := structhash.Md5(copied, 1)
 			if bytes.Compare(last, hash) != 0 {
 				last = hash
-				// TODO Call InitSequence  and then load an effect that is applied
-				// to a specific universe, instead of the hard coded test we have below
-				updating.Lock()
-				seq, err := testAllLEDs(0.15, copied)
-				updating.Unlock()
-				if err != nil {
-					select {
-					case errorC <- err.With("url", server):
-					case <-time.After(100 * time.Millisecond):
-						fmt.Fprintln(os.Stderr, err.Error())
-					}
-					continue
-				}
-				sr.InitSequence(*seq, time.Now())
+				animPortal.UpdateStatus(externalStatusToInternal(copied))
 			}
 		case <-quitC:
 			return
 		}
+	}
+}
+
+const numResos = 8
+
+func externalStatusToInternal(status *Status) *animation.PortalStatus {
+	var faction animation.Faction
+	switch status.Faction {
+	case "E":
+		faction = animation.ENL
+	case "R":
+		faction = animation.RES
+	case "N":
+		faction = animation.NEU
+	default:
+		panic(fmt.Sprintf("Unexpected faction in external status: %s", status.Faction))
+	}
+
+	resos := make([]animation.ResonatorStatus, numResos)
+	if len(status.Resonators) != numResos {
+		panic(fmt.Sprintf("Number of resonators in external status is %d, not the expected %d", len(status.Resonators), numResos))
+	}
+
+	for idx := range resos {
+		resos[idx] = animation.ResonatorStatus{
+			Health: status.Resonators[idx].Health,
+			Level:  int(status.Resonators[idx].Level),
+		}
+	}
+
+	return &animation.PortalStatus{
+		Faction:    faction,
+		Level:      status.Level,
+		Resonators: resos,
 	}
 }
 

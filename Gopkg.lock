@@ -26,10 +26,16 @@
   version = "v0.4.7"
 
 [[projects]]
-  branch = "slices_side_effects"
+  branch = "effects_development"
   name = "github.com/TeamNorCal/animation"
   packages = ["."]
-  revision = "a68634864b5a2bc774090c97a65d4c90f52f0b25"
+  revision = "ffb8be34fd4eae7d7c34e6af18afe081ecb39a3d"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/TeamNorCal/portalmodel"
+  packages = ["."]
+  revision = "2085d8b981abe2858bb2ed20c38f9babdeca94f3"
 
 [[projects]]
   name = "github.com/aokoli/goutils"
@@ -463,6 +469,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "606d07a5d2a13f3f6b62cb6670848ab1628a141d5a05b4e7e453898606447605"
+  inputs-digest = "03b52358dbda73a20cbf48755f7d1d0cd411e96509232416b2ead63331d671cd"
   solver-name = "gps-cdcl"
   solver-version = 1
