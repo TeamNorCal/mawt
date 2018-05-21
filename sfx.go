@@ -11,12 +11,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TeamNorCal/mawt/model"
 	"github.com/karlmutch/errors"
 )
 
 type SFXState struct {
-	current *Status
-	last    *Status
+	current *model.Status
+	last    *model.Status
 
 	ambientC chan string
 	sfxC     chan []string
@@ -24,7 +25,7 @@ type SFXState struct {
 	sync.Mutex
 }
 
-func (sfx *SFXState) process(msg *PortalMsg) (err errors.Error) {
+func (sfx *SFXState) process(msg *model.PortalMsg) (err errors.Error) {
 	if msg == nil {
 		return nil
 	}
@@ -100,7 +101,7 @@ func (sfx *SFXState) process(msg *PortalMsg) (err errors.Error) {
 }
 
 // StartSFX will add itself to the subscriptions for portal messages
-func StartSFX(subscribeC chan chan *PortalMsg, errorC chan<- errors.Error, quitC <-chan struct{}) {
+func StartSFX(subscribeC chan chan *model.PortalMsg, errorC chan<- errors.Error, quitC <-chan struct{}) {
 
 	sfx := &SFXState{
 		ambientC: make(chan string, 3),
@@ -116,7 +117,7 @@ func StartSFX(subscribeC chan chan *PortalMsg, errorC chan<- errors.Error, quitC
 	}
 
 	// Allow a lot of messages to queue up as we will only process the last one anyway
-	updateC := make(chan *PortalMsg, 10)
+	updateC := make(chan *model.PortalMsg, 10)
 	defer close(updateC)
 
 	// Subscribe to portal events
@@ -131,7 +132,7 @@ func StartSFX(subscribeC chan chan *PortalMsg, errorC chan<- errors.Error, quitC
 
 	// Now listen to the subscribed portal events
 	for {
-		lastMsg := &PortalMsg{}
+		lastMsg := &model.PortalMsg{}
 
 		select {
 		case msg := <-updateC:

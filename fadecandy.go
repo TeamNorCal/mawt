@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/TeamNorCal/animation"
+	"github.com/TeamNorCal/mawt/model"
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/errors"
 	// colorful "github.com/lucasb-eyer/go-colorful"
@@ -27,7 +28,7 @@ var (
 )
 
 type LastStatus struct {
-	status *Status
+	status *model.Status
 	sync.Mutex
 }
 
@@ -39,9 +40,9 @@ type FadeCandy struct {
 // This file contains the implementation of a listener for tecthulhu events that will on
 // a regular basis lift the last known state of the portal and will update the fade-candy as needed
 
-func StartFadeCandy(server string, subscribeC chan chan *PortalMsg, errorC chan<- errors.Error, quitC <-chan struct{}) (fc *FadeCandy) {
+func StartFadeCandy(server string, subscribeC chan chan *model.PortalMsg, errorC chan<- errors.Error, quitC <-chan struct{}) (fc *FadeCandy) {
 
-	statusC := make(chan *PortalMsg, 1)
+	statusC := make(chan *model.PortalMsg, 1)
 	subscribeC <- statusC
 
 	status := &LastStatus{}
@@ -114,45 +115,11 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 			hash := structhash.Md5(copied, 1)
 			if bytes.Compare(last, hash) != 0 {
 				last = hash
-				animPortal.UpdateStatus(externalStatusToInternal(copied))
+				animPortal.UpdateStatus(model.StatusToAnimation(copied))
 			}
 		case <-quitC:
 			return
 		}
-	}
-}
-
-const numResos = 8
-
-func externalStatusToInternal(status *Status) *animation.PortalStatus {
-	var faction animation.Faction
-	switch status.Faction {
-	case "E":
-		faction = animation.ENL
-	case "R":
-		faction = animation.RES
-	case "N":
-		faction = animation.NEU
-	default:
-		panic(fmt.Sprintf("Unexpected faction in external status: %s", status.Faction))
-	}
-
-	resos := make([]animation.ResonatorStatus, numResos)
-	if len(status.Resonators) != numResos {
-		panic(fmt.Sprintf("Number of resonators in external status is %d, not the expected %d", len(status.Resonators), numResos))
-	}
-
-	for idx := range resos {
-		resos[idx] = animation.ResonatorStatus{
-			Health: status.Resonators[idx].Health,
-			Level:  int(status.Resonators[idx].Level),
-		}
-	}
-
-	return &animation.PortalStatus{
-		Faction:    faction,
-		Level:      status.Level,
-		Resonators: resos,
 	}
 }
 

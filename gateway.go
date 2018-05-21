@@ -5,13 +5,14 @@ package mawt
 // in turn queues up sounds effects to match.
 
 import (
+	"github.com/TeamNorCal/mawt/model"
 	"github.com/karlmutch/errors"
 )
 
 type Gateway struct {
 }
 
-func (*Gateway) Start(server string, errorC chan<- errors.Error, quitC <-chan struct{}) (tectC chan *PortalMsg, subscribeC chan chan *PortalMsg) {
+func (*Gateway) Start(server string, errorC chan<- errors.Error, quitC <-chan struct{}) (tectC chan *model.PortalMsg, subscribeC chan chan *model.PortalMsg) {
 
 	tectC, subscribeC = startFanOut(quitC)
 

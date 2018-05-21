@@ -1,10 +1,13 @@
-package mawt
+package model
 
 // This module defines implementation neutral portal state information
 // data structures
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"github.com/TeamNorCal/animation"
 )
 
 type Resonator struct {
@@ -33,7 +36,7 @@ type Status struct {
 	Resonators    []Resonator `json:"resonators"`
 }
 
-type portalStatus struct {
+type PortalStatus struct {
 	Status Status `json:"externalApiPortal"`
 }
 
@@ -58,4 +61,39 @@ func (status *Status) DeepCopy() (cpy *Status) {
 	byt, _ := json.Marshal(status)
 	json.Unmarshal(byt, cpy)
 	return cpy
+}
+
+// The following needs to be moved into the animation library
+const numResos = 8
+
+func StatusToAnimation(status *Status) *animation.PortalStatus {
+	var faction animation.Faction
+	switch status.Faction {
+	case "E":
+		faction = animation.ENL
+	case "R":
+		faction = animation.RES
+	case "N":
+		faction = animation.NEU
+	default:
+		panic(fmt.Sprintf("Unexpected faction in external status: %s", status.Faction))
+	}
+
+	resos := make([]animation.ResonatorStatus, numResos)
+	if len(status.Resonators) != numResos {
+		panic(fmt.Sprintf("Number of resonators in external status is %d, not the expected %d", len(status.Resonators), numResos))
+	}
+
+	for idx := range resos {
+		resos[idx] = animation.ResonatorStatus{
+			Health: status.Resonators[idx].Health,
+			Level:  int(status.Resonators[idx].Level),
+		}
+	}
+
+	return &animation.PortalStatus{
+		Faction:    faction,
+		Level:      status.Level,
+		Resonators: resos,
+	}
 }

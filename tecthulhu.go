@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/TeamNorCal/mawt/model"
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/errors"
 )
@@ -144,11 +145,11 @@ type PortalMon interface {
 type tecthulhu struct {
 	url     url.URL
 	home    bool
-	statusC chan<- *PortalMsg
+	statusC chan<- *model.PortalMsg
 	errorC  chan<- errors.Error
 }
 
-func NewTecthulu(url url.URL, home bool, statusC chan<- *PortalMsg, errorC chan<- errors.Error) (tec *tecthulhu) {
+func NewTecthulu(url url.URL, home bool, statusC chan<- *model.PortalMsg, errorC chan<- errors.Error) (tec *tecthulhu) {
 	return &tecthulhu{
 		url:     url,
 		home:    home,
@@ -157,21 +158,21 @@ func NewTecthulu(url url.URL, home bool, statusC chan<- *PortalMsg, errorC chan<
 	}
 }
 
-func (tec *tPortalStatus) status() (state *portalStatus) {
-	state = &portalStatus{
-		Status: Status{
+func (tec *tPortalStatus) status() (state *model.PortalStatus) {
+	state = &model.PortalStatus{
+		Status: model.Status{
 			Title:      tec.State.Title,
 			Owner:      tec.State.Owner,
 			Level:      float32(tec.State.Level),
 			Health:     float32(tec.State.Health),
 			Faction:    tec.State.Faction,
-			Mods:       []Mod{},
-			Resonators: []Resonator{},
+			Mods:       []model.Mod{},
+			Resonators: []model.Resonator{},
 		},
 	}
 	for _, res := range tec.State.Resonators {
 		state.Status.Resonators = append(state.Status.Resonators,
-			Resonator{
+			model.Resonator{
 				Position: res.Position,
 				Level:    float32(res.Level),
 				Health:   float32(res.Health),
@@ -180,7 +181,7 @@ func (tec *tPortalStatus) status() (state *portalStatus) {
 	}
 	state.Status.Faction = string(tec.State.Faction[0])
 	for _, mod := range tec.State.Mods {
-		newMod := Mod{
+		newMod := model.Mod{
 			Slot:   float32(mod.Slot),
 			Type:   mod.Type,
 			Owner:  mod.Owner,
@@ -193,7 +194,7 @@ func (tec *tPortalStatus) status() (state *portalStatus) {
 
 // checkPortal can be used to extract status information from the portal
 //
-func (tec *tecthulhu) checkPortal() (status *portalStatus, err errors.Error) {
+func (tec *tecthulhu) checkPortal() (status *model.PortalStatus, err errors.Error) {
 
 	body := []byte{}
 
@@ -252,7 +253,7 @@ func (tec *tecthulhu) sendStatus() {
 		return
 	}
 
-	msg := &PortalMsg{
+	msg := &model.PortalMsg{
 		Status: status.Status,
 		Home:   tec.home,
 	}
