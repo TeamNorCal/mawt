@@ -76,18 +76,26 @@ func StatusToAnimation(status *Status) *animation.PortalStatus {
 	case "N":
 		faction = animation.NEU
 	default:
-		panic(fmt.Sprintf("Unexpected faction in external status: %s", status.Faction))
+		fmt.Printf("Treating unexpected faction in external status as neutral: '%s'\n", status.Faction)
+		faction = animation.NEU
 	}
 
 	resos := make([]animation.ResonatorStatus, numResos)
-	if len(status.Resonators) != numResos {
-		panic(fmt.Sprintf("Number of resonators in external status is %d, not the expected %d", len(status.Resonators), numResos))
-	}
+	numResosInStatus := len(status.Resonators)
 
 	for idx := range resos {
-		resos[idx] = animation.ResonatorStatus{
-			Health: status.Resonators[idx].Health,
-			Level:  int(status.Resonators[idx].Level),
+		// TODO: Honor resonator position in status here
+		if idx < numResosInStatus {
+			resos[idx] = animation.ResonatorStatus{
+				Health: status.Resonators[idx].Health,
+				Level:  int(status.Resonators[idx].Level),
+			}
+		} else {
+			// Treat missing reso as undeployed
+			resos[idx] = animation.ResonatorStatus{
+				Health: 0.0,
+				Level:  0,
+			}
 		}
 	}
 
