@@ -33,7 +33,7 @@ var (
 	fcserver   = flag.String("server", "127.0.0.1:7890", "the ip and port for the fadecandy server (use /dev/null if none present)")
 	terminal   = flag.Bool("term", false, "Used to define if a text user interface is being used")
 	verbose    = flag.Bool("v", false, "When enabled will print internal logging for this tool")
-	tecthulhus = flag.String("tecthulhus", "http://127.0.0.1:12345/", "A comma seperated list of IP based tecthulhus, the first being the 'home' portal")
+	tecthulhus = flag.String("tecthulhus", "http://operation-wigwam.ingress.com:8080/v1/test-info", "A comma seperated list of IP based tecthulhus, the first being the 'home' portal")
 )
 
 func usage() {
