@@ -1,12 +1,14 @@
 package animation
 
 import (
+	"fmt"
 	"image/color"
 	"math/rand"
 	"strconv"
 	"time"
 
-	"github.com/TeamNorCal/portalmodel"
+	"github.com/TeamNorCal/animation/model"
+	ingressModel "github.com/TeamNorCal/mawt/model"
 )
 
 // Enacapsulates a model of a portal from the perpsective of animations.
@@ -72,9 +74,9 @@ func NewPortal() *Portal {
 	for idx := range sizes {
 		sizes[idx] = windowSize
 	}
-	frameBuf := make([]ChannelData, numResos+numShaftWindows)
+	frameBuf := make([]model.ChannelData, numResos+numShaftWindows)
 	for idx := range frameBuf {
-		frameBuf[idx] = ChannelData{OpcChannel(idx + 1), make([]color.RGBA, windowSize)}
+		frameBuf[idx] = model.ChannelData{model.OpcChannel(idx + 1), make([]color.RGBA, windowSize)}
 	}
 	resoBufs := make([]animCircBuf, 0, numResos)
 	for idx := 0; idx < numResos; idx++ {
@@ -89,9 +91,41 @@ func NewPortal() *Portal {
 	}
 }
 
+func externalStatusToInternal(external *ingressModel.Status) *PortalStatus {
+	var faction Faction
+	switch external.Faction {
+	case "E":
+		faction = ENL
+	case "R":
+		faction = RES
+	case "N":
+		faction = NEU
+	default:
+		panic(fmt.Sprintf("Unexpected faction in external status: %s", external.Faction))
+	}
+
+	resos := make([]ResonatorStatus, numResos)
+	if len(external.Resonators) != numResos {
+		panic(fmt.Sprintf("Number of resonators in external status is %d, not the expected %d", len(external.Resonators), numResos))
+	}
+
+	for idx := range resos {
+		resos[idx] = ResonatorStatus{
+			Health: external.Resonators[idx].Health,
+			Level:  int(external.Resonators[idx].Level),
+		}
+	}
+
+	return &PortalStatus{
+		Faction:    faction,
+		Level:      external.Level,
+		Resonators: resos,
+	}
+}
+
 // UpdateFromCanonicalStatus updates the animation with the status of the portal,
 // using the canonical Status type
-func (p *Portal) UpdateFromCanonicalStatus(status *portalmodel.Status) {
+func (p *Portal) UpdateFromCanonicalStatus(status *ingressModel.Status) {
 	p.UpdateStatus(externalStatusToInternal(status))
 }
 
@@ -116,7 +150,7 @@ func (p *Portal) UpdateStatus(status *PortalStatus) {
 // Universes map
 // The returned buffers will typically be reused between frames, so callers
 // should not hold onto references to them nor modify them!
-func (p *Portal) GetFrame(frameTime time.Time) []ChannelData {
+func (p *Portal) GetFrame(frameTime time.Time) []model.ChannelData {
 	// Update resonators
 	for idx := 0; idx < numResos; idx++ {
 		p.getResoFrame(idx, frameTime)

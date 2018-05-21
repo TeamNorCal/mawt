@@ -5,9 +5,6 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
-
-	"github.com/TeamNorCal/animation"
 )
 
 type Resonator struct {
@@ -61,47 +58,4 @@ func (status *Status) DeepCopy() (cpy *Status) {
 	byt, _ := json.Marshal(status)
 	json.Unmarshal(byt, cpy)
 	return cpy
-}
-
-// The following needs to be moved into the animation library
-const numResos = 8
-
-func StatusToAnimation(status *Status) *animation.PortalStatus {
-	var faction animation.Faction
-	switch status.Faction {
-	case "E":
-		faction = animation.ENL
-	case "R":
-		faction = animation.RES
-	case "N":
-		faction = animation.NEU
-	default:
-		fmt.Printf("Treating unexpected faction in external status as neutral: '%s'\n", status.Faction)
-		faction = animation.NEU
-	}
-
-	resos := make([]animation.ResonatorStatus, numResos)
-	numResosInStatus := len(status.Resonators)
-
-	for idx := range resos {
-		// TODO: Honor resonator position in status here
-		if idx < numResosInStatus {
-			resos[idx] = animation.ResonatorStatus{
-				Health: status.Resonators[idx].Health,
-				Level:  int(status.Resonators[idx].Level),
-			}
-		} else {
-			// Treat missing reso as undeployed
-			resos[idx] = animation.ResonatorStatus{
-				Health: 0.0,
-				Level:  0,
-			}
-		}
-	}
-
-	return &animation.PortalStatus{
-		Faction:    faction,
-		Level:      status.Level,
-		Resonators: resos,
-	}
 }

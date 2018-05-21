@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TeamNorCal/animation"
+	animationModel "github.com/TeamNorCal/animation/model"
 	"github.com/TeamNorCal/mawt/model"
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/errors"
@@ -113,6 +113,11 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 			copied := status.status.DeepCopy()
 			status.Unlock()
 
+			// Portal status not yet available
+			if copied.Faction == "" {
+				continue
+			}
+
 			hash := structhash.Md5(copied, 1)
 			if bytes.Compare(last, hash) != 0 {
 				last = hash
@@ -212,7 +217,7 @@ var (
 	}
 )
 
-func (fc *FadeCandy) updateStrands(data []animation.ChannelData, errorC chan<- errors.Error) (err errors.Error) {
+func (fc *FadeCandy) updateStrands(data []animationModel.ChannelData, errorC chan<- errors.Error) (err errors.Error) {
 	headingOnce.Do(onceBody)
 	fmt.Printf("\x1b[3;0H")
 	for _, channelData := range data {

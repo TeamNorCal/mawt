@@ -9,28 +9,30 @@ package mawt
 import (
 	"time"
 
-	"github.com/TeamNorCal/animation"
-	"github.com/TeamNorCal/mawt/model"
 	"github.com/karlmutch/errors"
+
+	"github.com/TeamNorCal/animation"
+	animationModel "github.com/TeamNorCal/animation/model"
+	"github.com/TeamNorCal/mawt/model"
 )
 
 type statusSink struct {
 	statusC chan *model.PortalStatus
+	portal  animationModel.Portal
 }
-
-var animPortal = animation.NewPortal()
 
 func NewSink() (sink *statusSink) {
 	return &statusSink{
 		statusC: make(chan *model.PortalStatus),
+		portal:  animation.NewPortal(),
 	}
 }
 
 func (sink *statusSink) UpdateStatus(status *model.Status) (err errors.Error) {
-	animPortal.UpdateStatus(model.StatusToAnimation(status))
+	sink.portal.UpdateFromCanonicalStatus(status)
 	return nil
 }
 
-func (sink *statusSink) GetFrame(tm time.Time) (data []animation.ChannelData) {
-	return animPortal.GetFrame(tm)
+func (sink *statusSink) GetFrame(tm time.Time) []animationModel.ChannelData {
+	return sink.portal.GetFrame(tm)
 }

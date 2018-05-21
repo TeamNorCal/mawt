@@ -2,16 +2,9 @@ package animation
 
 import (
 	"encoding/json"
-	"fmt"
-	"image/color"
 
-	"github.com/TeamNorCal/portalmodel"
+	"github.com/TeamNorCal/animation/model"
 )
-
-// OpcChannel represents a channel in Open Pixel Controller parlance. Channel is a logical entity;
-// the fcserver config file maps this to pixels on strands on particular FadeCandy boards
-// fcserver configuration must honor this enumeration
-type OpcChannel int
 
 // List of channels in the portal - 1-8 are resonators, and 9-24 are tower windows
 const (
@@ -85,12 +78,6 @@ type PortalStatus struct {
 	Faction    Faction           // Owning faction
 	Level      float32           // Portal level, 0-8 (floating point, because average of resonator levels)
 	Resonators []ResonatorStatus // Array of 8 resonators, level 0 (undeployed) - 8
-}
-
-// ChannelData defines data for a particular OPC channel for a frame
-type ChannelData struct {
-	ChannelNum OpcChannel
-	Data       []color.RGBA
 }
 
 type animCircBuf struct {
@@ -192,41 +179,9 @@ func (cb *seqCircBuf) size() int {
 // Portal encapsulates the animation status of the entire portal. This will probably be a singleton
 // object, but the fields are encapsulated into a struct to allow for something different
 type Portal struct {
-	currentStatus *PortalStatus   // The cached current status of the portal
-	sr            *SequenceRunner // SequenceRunner for portal portion
-	seqBuf        seqCircBuf      // Queue of sequences to run on SequenceRunner
-	resonators    []animCircBuf   // Animations for resonators
-	frameBuf      []ChannelData   // Frame buffers by universe
-}
-
-func externalStatusToInternal(external *portalmodel.Status) *PortalStatus {
-	var faction Faction
-	switch external.Faction {
-	case "E":
-		faction = ENL
-	case "R":
-		faction = RES
-	case "N":
-		faction = NEU
-	default:
-		panic(fmt.Sprintf("Unexpected faction in external status: %s", external.Faction))
-	}
-
-	resos := make([]ResonatorStatus, numResos)
-	if len(external.Resonators) != numResos {
-		panic(fmt.Sprintf("Number of resonators in external status is %d, not the expected %d", len(external.Resonators), numResos))
-	}
-
-	for idx := range resos {
-		resos[idx] = ResonatorStatus{
-			Health: external.Resonators[idx].Health,
-			Level:  int(external.Resonators[idx].Level),
-		}
-	}
-
-	return &PortalStatus{
-		Faction:    faction,
-		Level:      external.Level,
-		Resonators: resos,
-	}
+	currentStatus *PortalStatus       // The cached current status of the portal
+	sr            *SequenceRunner     // SequenceRunner for portal portion
+	seqBuf        seqCircBuf          // Queue of sequences to run on SequenceRunner
+	resonators    []animCircBuf       // Animations for resonators
+	frameBuf      []model.ChannelData // Frame buffers by universe
 }

@@ -45,10 +45,6 @@
   branch = "mgutz/v2"
   name = "github.com/mgutz/logxi"
 
-[[constraint]]
-  branch = "effects_development"
-  name = "github.com/TeamNorCal/animation"
-
 [prune]
   go-tests = true
   unused-packages = true
