@@ -16,7 +16,6 @@ import (
 	"github.com/TeamNorCal/mawt/model"
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/errors"
-	// colorful "github.com/lucasb-eyer/go-colorful"
 
 	"github.com/cnf/structhash"
 
