@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
 
@@ -26,6 +27,19 @@ const (
 	// Length of reso pulse
 	resoPulseDuration = 3 * time.Second
 )
+
+// resoPositionToIndex maps a resonator position string (from Techthulu perspective)
+// to an index, 0-7 into the internal status resonator array
+var resoPositionToIndex = map[string]int{
+	"N":  0,
+	"NE": 1,
+	"E":  2,
+	"SE": 3,
+	"S":  4,
+	"SW": 5,
+	"W":  6,
+	"NW": 7,
+}
 
 // resonatorLevelColors is an array of colors of resonators of various levels, 0-8
 var resonatorLevelColors = []uint32{
@@ -109,17 +123,26 @@ func externalStatusToInternal(external *ingressModel.Status) (status *PortalStat
 	}
 
 	resos := make([]ResonatorStatus, numResos)
-	numResosInStatus := len(external.Resonators)
+
+	resosByIndex := make(map[int]*ingressModel.Resonator)
+	for _, reso := range external.Resonators {
+		index, isPresent := resoPositionToIndex[reso.Position]
+		if isPresent {
+			resosByIndex[index] = &reso
+		} else {
+			fmt.Fprintf(os.Stderr, "Resonator with unknown position %v ignored: %v",
+				reso.Position, reso)
+		}
+	}
 
 	for idx := range resos {
-		// TODO: Honor resonator position in status here
-		if idx < numResosInStatus {
+		if reso, isPresent := resosByIndex[idx]; isPresent {
 			status.Resonators[idx] = ResonatorStatus{
-				Health: external.Resonators[idx].Health,
-				Level:  int(external.Resonators[idx].Level),
+				Health: reso.Health,
+				Level:  int(reso.Level),
 			}
 		} else {
-			// Treat missing reso as undeployed
+			// Undeployed resonator
 			status.Resonators[idx] = ResonatorStatus{
 				Health: 0.0,
 				Level:  0,
