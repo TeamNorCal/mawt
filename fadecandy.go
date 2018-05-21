@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/TeamNorCal/animation"
+	"github.com/TeamNorCal/mawt/model"
 	"github.com/go-stack/stack"
 	"github.com/karlmutch/errors"
-	// colorful "github.com/lucasb-eyer/go-colorful"
 
 	"github.com/cnf/structhash"
 
@@ -27,7 +27,7 @@ var (
 )
 
 type LastStatus struct {
-	status *Status
+	status *model.Status
 	sync.Mutex
 }
 
@@ -39,9 +39,9 @@ type FadeCandy struct {
 // This file contains the implementation of a listener for tecthulhu events that will on
 // a regular basis lift the last known state of the portal and will update the fade-candy as needed
 
-func StartFadeCandy(server string, subscribeC chan chan *PortalMsg, errorC chan<- errors.Error, quitC <-chan struct{}) (fc *FadeCandy) {
+func StartFadeCandy(server string, subscribeC chan chan *model.PortalMsg, errorC chan<- errors.Error, quitC <-chan struct{}) (fc *FadeCandy) {
 
-	statusC := make(chan *PortalMsg, 1)
+	statusC := make(chan *model.PortalMsg, 1)
 	subscribeC <- statusC
 
 	status := &LastStatus{}
@@ -98,23 +98,15 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 		}
 	}
 
-	// Start the LED command message pusher
-	go fc.RunLoop(errorC, quitC)
-
-	sr, err := GetSeqRunner()
-	if err != nil {
-		select {
-		case errorC <- err:
-		case <-time.After(100 * time.Millisecond):
-			fmt.Fprintln(os.Stderr, err.Error())
-		}
-		return
-	}
-
-	tick := time.NewTicker(refresh)
-	defer tick.Stop()
+	sink := NewSink()
 
 	for {
+		// Start the LED command message pusher
+		go fc.RunLoop(sink, errorC, quitC)
+
+		tick := time.NewTicker(refresh)
+		defer tick.Stop()
+
 		select {
 		case <-tick.C:
 			status.Lock()
@@ -124,20 +116,7 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 			hash := structhash.Md5(copied, 1)
 			if bytes.Compare(last, hash) != 0 {
 				last = hash
-				// TODO Call InitSequence  and then load an effect that is applied
-				// to a specific universe, instead of the hard coded test we have below
-				updating.Lock()
-				seq, err := testAllLEDs(0.15, copied)
-				updating.Unlock()
-				if err != nil {
-					select {
-					case errorC <- err.With("url", server):
-					case <-time.After(100 * time.Millisecond):
-						fmt.Fprintln(os.Stderr, err.Error())
-					}
-					continue
-				}
-				sr.InitSequence(*seq, time.Now())
+				sink.UpdateStatus(copied)
 			}
 		case <-quitC:
 			return
@@ -163,21 +142,9 @@ func (fc *FadeCandy) Send(m *opc.Message) (err errors.Error) {
 	return nil
 }
 
-func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) (err errors.Error) {
+func (fc *FadeCandy) RunLoop(sink *statusSink, errorC chan<- errors.Error, quitC <-chan struct{}) (err errors.Error) {
 
 	defer close(errorC)
-
-	sr, err := GetSeqRunner()
-	if err != nil {
-		return err
-	}
-
-	devices, universes, err := GetUniverses()
-	if err != nil {
-		return err
-	}
-	fmt.Println(devices)
-	fmt.Println(universes)
 
 	refresh := time.Duration(30 * time.Millisecond)
 	tick := time.NewTicker(refresh)
@@ -190,27 +157,27 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 		case <-tick.C:
 			updating.Lock()
 			// Populate the logical buffers
-			sr.ProcessFrame(time.Now())
+			frameData := sink.GetFrame(time.Now())
 
 			// Copy the logical buffers into the physical buffers
 
-			for _, id := range universes {
-				if errGo := devices.UpdateUniverse(id, sr.UniverseData(id)); errGo != nil {
-					sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
-				}
-			}
-
-			// Iterate across physical strands sending updates to the
-			// FadeCandies, possibly diffing to previous frame to see if necessary
-			deviceStrands, errGo := GetStrands()
-			if errGo != nil {
-				sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
-				updating.Unlock()
-				continue
-			}
+			// for _, id := range universes {
+			// 	if errGo := devices.UpdateUniverse(id, sr.UniverseData(id)); errGo != nil {
+			// 		sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+			// 	}
+			// }
+			//
+			// // Iterate across physical strands sending updates to the
+			// // FadeCandies, possibly diffing to previous frame to see if necessary
+			// deviceStrands, errGo := GetStrands()
+			// if errGo != nil {
+			// 	sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
+			// 	updating.Unlock()
+			// 	continue
+			// }
 
 			newRefresh := refresh
-			if opcError = fc.updateStrands(devices, deviceStrands, errorC); opcError != nil {
+			if opcError = fc.updateStrands(frameData, errorC); opcError != nil {
 				newRefresh = time.Duration(250 * time.Millisecond)
 			} else {
 				newRefresh = time.Duration(30 * time.Millisecond)
@@ -245,47 +212,32 @@ var (
 	}
 )
 
-func (fc *FadeCandy) updateStrands(devices animation.Mapping, deviceStrands [][]int, errorC chan<- errors.Error) (err errors.Error) {
+func (fc *FadeCandy) updateStrands(data []animation.ChannelData, errorC chan<- errors.Error) (err errors.Error) {
 	headingOnce.Do(onceBody)
 	fmt.Printf("\x1b[3;0H")
-	for device, strands := range deviceStrands {
-		strandNum := 0
-		for strand, strandLen := range strands {
-			// The OPC protocol assigns a channel per LED strand, and supports a maximum of
-			// 255 strands per server.  Channel 0 is a broadcast channel.
-			channel := uint8((device * 8) + strand + 1)
-			strip := fmt.Sprintf("%02d %d  → ", device, strandNum)
-			strandNum++
-			if strandLen == 0 {
-				fmt.Println(strip)
-				continue
-			}
-			// The following gives us an array of RGBA as a linear arrangement of LEDs
-			// for the indicated strand
-			strandData, errGo := devices.GetStrandData(uint(device), uint(strand))
-			if errGo != nil {
-				sendErr(errorC, errors.Wrap(errGo).With("stack", stack.Trace().TrimRuntime()))
-				continue
-			}
+	for _, channelData := range data {
+		// The OPC protocol assigns a channel per LED strand, and supports a maximum of
+		// 255 strands per server.  Channel 0 is a broadcast channel.
+		channel := uint8(channelData.ChannelNum)
+		strip := fmt.Sprintf("%02d → ", channel)
 
-			// Prepare a message for this strand that has 3 bytes per LED
-			m := opc.NewMessage(channel)
-			m.SetLength(uint16(len(strandData) * 3))
-			for i, rgba := range strandData {
-				r, g, b, a := rgba.RGBA()
-				if a == 0 {
-					r = 0
-					g = 0
-					b = 0
-				}
-				strip += fmt.Sprintf("\x1b[38;2;%d;%d;%dm█\x1b[0m", uint8(r), uint8(g), uint8(b))
-				m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
+		// Prepare a message for this strand that has 3 bytes per LED
+		m := opc.NewMessage(channel)
+		m.SetLength(uint16(len(channelData.Data) * 3))
+		for i, rgba := range channelData.Data {
+			r, g, b, a := rgba.RGBA()
+			if a == 0 {
+				r = 0
+				g = 0
+				b = 0
 			}
-			if err = fc.Send(m); err != nil {
-				sendErr(errorC, err)
-			}
-			fmt.Println(strip)
+			strip += fmt.Sprintf("\x1b[38;2;%d;%d;%dm█\x1b[0m", uint8(r), uint8(g), uint8(b))
+			m.SetPixelColor(i, uint8(r), uint8(g), uint8(b))
 		}
+		if err = fc.Send(m); err != nil {
+			sendErr(errorC, err)
+		}
+		fmt.Println(strip)
 		fmt.Printf("\x1b[20;0H")
 	}
 	return err

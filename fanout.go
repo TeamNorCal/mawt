@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/TeamNorCal/mawt/model"
 )
 
 var (
 	subs = &Subs{
-		subs: []chan *PortalMsg{},
+		subs: []chan *model.PortalMsg{},
 	}
 )
 
 type Subs struct {
-	subs []chan *PortalMsg
+	subs []chan *model.PortalMsg
 	sync.Mutex
 }
 
@@ -22,10 +24,10 @@ type Subs struct {
 // to which portal update messages get sent and, a channel that can be used to add
 // listeners
 //
-func startFanOut(quitC <-chan struct{}) (inC chan *PortalMsg, subC chan chan *PortalMsg) {
+func startFanOut(quitC <-chan struct{}) (inC chan *model.PortalMsg, subC chan chan *model.PortalMsg) {
 
-	inC = make(chan *PortalMsg, 1)
-	subC = make(chan chan *PortalMsg, 1)
+	inC = make(chan *model.PortalMsg, 1)
+	subC = make(chan chan *model.PortalMsg, 1)
 
 	go func(quitC <-chan struct{}) {
 		defer fmt.Println("fanout stopped")

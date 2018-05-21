@@ -29,7 +29,7 @@
   branch = "effects_development"
   name = "github.com/TeamNorCal/animation"
   packages = ["."]
-  revision = "7fb31536d863286ccd59dccda4db25dc00e4a9b7"
+  revision = "ffb8be34fd4eae7d7c34e6af18afe081ecb39a3d"
 
 [[projects]]
   name = "github.com/aokoli/goutils"
@@ -463,6 +463,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "606d07a5d2a13f3f6b62cb6670848ab1628a141d5a05b4e7e453898606447605"
+  inputs-digest = "67fcad1322fbfeea69bf7167fee1d4ed5abd7d208b670082019d4fb385b61230"
   solver-name = "gps-cdcl"
   solver-version = 1
