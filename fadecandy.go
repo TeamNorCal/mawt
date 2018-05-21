@@ -99,13 +99,15 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 		}
 	}
 
-	// Start the LED command message pusher
-	go fc.RunLoop(errorC, quitC)
-
-	tick := time.NewTicker(refresh)
-	defer tick.Stop()
+	sink := NewSink()
 
 	for {
+		// Start the LED command message pusher
+		go fc.RunLoop(sink, errorC, quitC)
+
+		tick := time.NewTicker(refresh)
+		defer tick.Stop()
+
 		select {
 		case <-tick.C:
 			status.Lock()
@@ -115,7 +117,7 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 			hash := structhash.Md5(copied, 1)
 			if bytes.Compare(last, hash) != 0 {
 				last = hash
-				animPortal.UpdateStatus(model.StatusToAnimation(copied))
+				sink.UpdateStatus(copied)
 			}
 		case <-quitC:
 			return
@@ -141,7 +143,7 @@ func (fc *FadeCandy) Send(m *opc.Message) (err errors.Error) {
 	return nil
 }
 
-func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) (err errors.Error) {
+func (fc *FadeCandy) RunLoop(sink *statusSink, errorC chan<- errors.Error, quitC <-chan struct{}) (err errors.Error) {
 
 	defer close(errorC)
 
@@ -156,7 +158,7 @@ func (fc *FadeCandy) RunLoop(errorC chan<- errors.Error, quitC <-chan struct{}) 
 		case <-tick.C:
 			updating.Lock()
 			// Populate the logical buffers
-			frameData := animPortal.GetFrame(time.Now())
+			frameData := sink.GetFrame(time.Now())
 
 			// Copy the logical buffers into the physical buffers
 
