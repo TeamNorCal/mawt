@@ -8,7 +8,7 @@ import (
 
 // List of channels in the portal - 1-8 are resonators, and 9-24 are tower windows
 const (
-	_ = iota // OPC channels are 1 based, with 0 being broadcast
+	_ model.OpcChannel = iota // OPC channels are 1 based, with 0 being broadcast
 	Reso1
 	Reso2
 	Reso3
