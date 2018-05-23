@@ -39,7 +39,7 @@ type FadeCandy struct {
 // This file contains the implementation of a listener for tecthulhu events that will on
 // a regular basis lift the last known state of the portal and will update the fade-candy as needed
 
-func StartFadeCandy(server string, subscribeC chan chan *model.PortalMsg, errorC chan<- errors.Error, quitC <-chan struct{}) (fc *FadeCandy) {
+func StartFadeCandy(server string, subscribeC chan chan *model.PortalMsg, debug bool, errorC chan<- errors.Error, quitC <-chan struct{}) (fc *FadeCandy) {
 
 	statusC := make(chan *model.PortalMsg, 1)
 	subscribeC <- statusC
@@ -69,13 +69,13 @@ func StartFadeCandy(server string, subscribeC chan chan *model.PortalMsg, errorC
 		nop: server == "/dev/null",
 	}
 
-	go fc.run(status, server, time.Duration(200*time.Millisecond), errorC, quitC)
+	go fc.run(status, server, time.Duration(200*time.Millisecond), debug, errorC, quitC)
 
 	return fc
 }
 
 func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duration,
-	errorC chan<- errors.Error, quitC <-chan struct{}) {
+	debug bool, errorC chan<- errors.Error, quitC <-chan struct{}) {
 
 	last := []byte{}
 
@@ -102,7 +102,7 @@ func (fc *FadeCandy) run(status *LastStatus, server string, refresh time.Duratio
 
 	for {
 		// Start the LED command message pusher
-		go fc.RunLoop(sink, errorC, quitC)
+		go fc.RunLoop(sink, debug, errorC, quitC)
 
 		tick := time.NewTicker(refresh)
 		defer tick.Stop()
@@ -147,7 +147,7 @@ func (fc *FadeCandy) Send(m *opc.Message) (err errors.Error) {
 	return nil
 }
 
-func (fc *FadeCandy) RunLoop(sink *statusSink, errorC chan<- errors.Error, quitC <-chan struct{}) (err errors.Error) {
+func (fc *FadeCandy) RunLoop(sink *statusSink, debug bool, errorC chan<- errors.Error, quitC <-chan struct{}) (err errors.Error) {
 
 	defer close(errorC)
 
@@ -182,7 +182,7 @@ func (fc *FadeCandy) RunLoop(sink *statusSink, errorC chan<- errors.Error, quitC
 			// }
 
 			newRefresh := refresh
-			if opcError = fc.updateStrands(frameData, errorC); opcError != nil {
+			if opcError = fc.updateStrands(frameData, debug, errorC); opcError != nil {
 				newRefresh = time.Duration(250 * time.Millisecond)
 			} else {
 				newRefresh = time.Duration(30 * time.Millisecond)
@@ -205,11 +205,11 @@ var (
 	headingOnce sync.Once
 
 	onceBody = func() {
-		fmt.Printf("\x1b[1;0H\x1b[0J       ")
+		fmt.Printf("\x1b[1;0H\x1b[0J     ")
 		for i := 1; i != 10; i++ {
-			fmt.Printf("     ")
+			fmt.Printf("         %d", i)
 		}
-		fmt.Printf("\n           ")
+		fmt.Printf("\n     ")
 		for i := 1; i != 10; i++ {
 			fmt.Print("1234567890")
 		}
@@ -217,14 +217,16 @@ var (
 	}
 )
 
-func (fc *FadeCandy) updateStrands(data []animationModel.ChannelData, errorC chan<- errors.Error) (err errors.Error) {
-	headingOnce.Do(onceBody)
-	fmt.Printf("\x1b[3;0H")
+func (fc *FadeCandy) updateStrands(data []animationModel.ChannelData, debug bool, errorC chan<- errors.Error) (err errors.Error) {
+	if debug {
+		headingOnce.Do(onceBody)
+		fmt.Printf("\x1b[3;0H")
+	}
 	for _, channelData := range data {
 		// The OPC protocol assigns a channel per LED strand, and supports a maximum of
 		// 255 strands per server.  Channel 0 is a broadcast channel.
 		channel := uint8(channelData.ChannelNum)
-		strip := fmt.Sprintf("%02d → ", channel)
+		strip := fmt.Sprintf("\x1b[%d;0H%02d → ", channel+3, channel)
 
 		// Prepare a message for this strand that has 3 bytes per LED
 		m := opc.NewMessage(channel)
@@ -242,8 +244,10 @@ func (fc *FadeCandy) updateStrands(data []animationModel.ChannelData, errorC cha
 		if err = fc.Send(m); err != nil {
 			sendErr(errorC, err)
 		}
-		fmt.Println(strip)
-		fmt.Printf("\x1b[20;0H")
+		if debug {
+			fmt.Println(strip)
+			fmt.Printf("\x1b[32;0H")
+		}
 	}
 	return err
 }

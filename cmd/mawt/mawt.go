@@ -146,11 +146,6 @@ func EntryPoint(quitC chan struct{}, doneC chan struct{}) (errs []errors.Error) 
 		eC := errorC
 		mC := msgC
 
-		if *terminal {
-			eC = nil
-			mC = nil
-		}
-
 		for {
 			select {
 			case err := <-eC:
@@ -188,7 +183,7 @@ func startServer(ctx context.Context, msgC chan string, errorC chan errors.Error
 
 	gw := &mawt.Gateway{}
 
-	statusC, subscribeC := gw.Start(*fcserver, errorC, ctx.Done())
+	statusC, subscribeC := gw.Start(*fcserver, *terminal, errorC, ctx.Done())
 
 	portals := strings.Split(*tecthulhus, ",")
 	for i, portal := range portals {

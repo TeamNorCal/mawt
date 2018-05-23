@@ -12,7 +12,7 @@ import (
 type Gateway struct {
 }
 
-func (*Gateway) Start(server string, errorC chan<- errors.Error, quitC <-chan struct{}) (tectC chan *model.PortalMsg, subscribeC chan chan *model.PortalMsg) {
+func (*Gateway) Start(server string, debug bool, errorC chan<- errors.Error, quitC <-chan struct{}) (tectC chan *model.PortalMsg, subscribeC chan chan *model.PortalMsg) {
 
 	tectC, subscribeC = startFanOut(quitC)
 
@@ -22,7 +22,7 @@ func (*Gateway) Start(server string, errorC chan<- errors.Error, quitC <-chan st
 	//
 	go StartSFX(subscribeC, errorC, quitC)
 
-	StartFadeCandy(server, subscribeC, errorC, quitC)
+	StartFadeCandy(server, subscribeC, debug, errorC, quitC)
 
 	return tectC, subscribeC
 }
